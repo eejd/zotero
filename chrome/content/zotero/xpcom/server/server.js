@@ -260,7 +260,7 @@ Zotero.Server.RequestHandler.prototype._bodyData = function () {
 		}
 	}
 	// handle envelope
-	this._processEndpoint("POST", data); // async
+	this._processEndpoint(this.request.method, data); // async
 }
 
 
@@ -364,10 +364,10 @@ Zotero.Server.RequestHandler.prototype.handleRequest = async function () {
 	if (request.method == "HEAD" || request.method == "OPTIONS") {
 		this._requestFinished(this._generateResponse(200));
 	}
-	else if (request.method == "GET") {
-		this._processEndpoint("GET", null); // async
+	else if (request.method == "GET" || request.method == "DELETE") {
+		this._processEndpoint(request.method, null); // async
 	}
-	else if (request.method == "POST") {
+	else if (request.method == "POST" || request.method == "PATCH") {
 		const contentLengthRe = /^([0-9]+)$/;
 		
 		// parse content length
@@ -420,7 +420,7 @@ Zotero.Server.RequestHandler.prototype._processEndpoint = async function (method
 		}
 		
 		var data = null;
-		if (method === 'POST' && this.contentType) {
+		if ((method === 'POST' || method === 'PATCH') && this.contentType) {
 			// check that endpoint supports contentType
 			var supportedDataTypes = endpoint.supportedDataTypes;
 			if (supportedDataTypes && supportedDataTypes != '*'

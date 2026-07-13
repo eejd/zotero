@@ -1055,3 +1055,6 @@ function searchToDebugJSON(search) {
 }
 
 class BadRequestError extends Error {}
+
+// Exposed for server_localAPI_writes.js (native-split fork; contract Phase 2)
+Zotero.Server.LocalAPI.Endpoint = LocalAPIEndpoint;
