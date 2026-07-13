@@ -245,6 +245,26 @@ describe("Local API Writes", function () {
 			assert.lengthOf(matches.response, 1);
 		});
 
+		it("should create fresh when the cached clientKey item was deleted", async function () {
+			let payload = {
+				url: 'https://example.org/capture-evicted',
+				title: 'Capture Evicted Page',
+				translate: false,
+				saveSnapshot: false,
+				clientKey: 'test-client-key-2'
+			};
+			let first = await apiPostJSON('/users/0/capture', payload);
+			assert.equal(first.status, 201);
+			let key = first.response.success['0'];
+			let item = Zotero.Items.getByLibraryAndKey(userLibraryID, key);
+			await item.eraseTx();
+			// The replay must not resurrect a response for an item that no longer exists
+			let second = await apiPostJSON('/users/0/capture', payload);
+			assert.equal(second.status, 201);
+			assert.notEqual(second.response.success['0'], key);
+			assert.ok(Zotero.Items.getByLibraryAndKey(userLibraryID, second.response.success['0']));
+		});
+
 		it("should translate captured HTML with embedded metadata", async function () {
 			let translators = await Zotero.Translators.getAllForType('web');
 			if (!translators.find(t => t.label == 'Embedded Metadata')) {

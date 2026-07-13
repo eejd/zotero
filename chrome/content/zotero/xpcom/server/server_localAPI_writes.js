@@ -363,11 +363,16 @@ Zotero.Server.LocalAPI.Capture = writeEndpoint(class extends Zotero.Server.Local
 		this.checkEditable(requestData);
 
 		// Idempotent replay: a clientKey we have already processed returns the original
-		// result with a 200 instead of creating a duplicate
+		// result with a 200 instead of creating a duplicate -- but only while the created
+		// item still exists; once it has been deleted, the same clientKey creates fresh
 		let seen = Zotero.Server.LocalAPI.Writes._captureResults;
 		if (clientKey && seen.has(clientKey)) {
-			let [, headers, body] = seen.get(clientKey);
-			return this.makeResponse(200, { ...headers }, body);
+			let cached = seen.get(clientKey);
+			if (Zotero.Items.getByLibraryAndKey(cached.libraryID, cached.itemKey)) {
+				let [, headers, body] = cached.response;
+				return this.makeResponse(200, { ...headers }, body);
+			}
+			seen.delete(clientKey);
 		}
 
 		let libraryID = requestData.libraryID;
@@ -425,7 +430,7 @@ Zotero.Server.LocalAPI.Capture = writeEndpoint(class extends Zotero.Server.Local
 			if (seen.size >= CAPTURE_IDEMPOTENCY_LIMIT) {
 				seen.delete(seen.keys().next().value);
 			}
-			seen.set(clientKey, response);
+			seen.set(clientKey, { libraryID, itemKey: primary.key, response });
 		}
 		return response;
 	}
