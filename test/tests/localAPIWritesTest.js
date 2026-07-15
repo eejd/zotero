@@ -189,6 +189,76 @@ describe("Local API Writes", function () {
 		});
 	});
 
+	describe("POST + DELETE /api/users/:userID/searches", function () {
+		it("should round-trip a saved search", async function () {
+			let response = await apiPostJSON('/users/0/searches', [{
+				name: 'Local API Search',
+				conditions: [{ condition: 'title', operator: 'contains', value: 'zotero' }]
+			}]);
+			assert.equal(response.status, 200);
+			let key = response.response.success['0'];
+			let search = Zotero.Searches.getByLibraryAndKey(userLibraryID, key);
+			assert.ok(search);
+			assert.equal(search.name, 'Local API Search');
+			assert.equal(search.getConditions()[0].value, 'zotero');
+
+			await apiRequest('DELETE', `/users/0/searches?searchKey=${key}`, { successCodes: [204] });
+			assert.isFalse(Zotero.Searches.getByLibraryAndKey(userLibraryID, key));
+		});
+	});
+
+	describe("GET + POST + DELETE /api/users/:userID/settings", function () {
+		it("should round-trip setting wrappers", async function () {
+			let response = await apiPostJSON('/users/0/settings', {
+				localAPITest: { value: { enabled: true } }
+			});
+			assert.equal(response.status, 204);
+			assert.deepEqual(Zotero.SyncedSettings.get(userLibraryID, 'localAPITest'), { enabled: true });
+
+			response = await apiRequest('GET', '/users/0/settings', { responseType: 'json' });
+			assert.deepEqual(response.response.localAPITest.value, { enabled: true });
+			assert.property(response.response.localAPITest, 'version');
+
+			response = await apiRequest('DELETE', '/users/0/settings?settingKey=localAPITest', {
+				successCodes: [204]
+			});
+			assert.equal(response.status, 204);
+			assert.isNull(Zotero.SyncedSettings.get(userLibraryID, 'localAPITest'));
+		});
+
+		it("should return 304 for a current If-Modified-Since-Version", async function () {
+			let version = Zotero.Libraries.get(userLibraryID).libraryVersion;
+			let response = await apiRequest('GET', '/users/0/settings', {
+				headers: { 'If-Modified-Since-Version': String(version) },
+				successCodes: [304]
+			});
+			assert.equal(response.status, 304);
+		});
+
+		it("should report malformed settings without rejecting valid siblings", async function () {
+			let response = await apiPostJSON('/users/0/settings', {
+				validSetting: { value: 1 },
+				invalidSetting: { missing: 'value' }
+			});
+			assert.equal(response.status, 200);
+			assert.equal(Zotero.SyncedSettings.get(userLibraryID, 'validSetting'), 1);
+			assert.equal(response.response.failed.invalidSetting.code, 400);
+			await Zotero.SyncedSettings.clear(userLibraryID, 'validSetting');
+		});
+
+		it("should expose the same write surface for group libraries", async function () {
+			let group = await createGroup();
+			let response = await apiPostJSON(`/groups/${group.groupID}/settings`, {
+				groupSetting: { value: 'shared' }
+			});
+			assert.equal(response.status, 204);
+			assert.equal(Zotero.SyncedSettings.get(group.libraryID, 'groupSetting'), 'shared');
+			await apiRequest('DELETE', `/groups/${group.groupID}/settings?settingKey=groupSetting`, {
+				successCodes: [204]
+			});
+		});
+	});
+
 	describe("POST /api/users/:userID/capture", function () {
 		it("should save a fallback webpage item when translation is disabled", async function () {
 			let collection = await createDataObject('collection', { setTitle: true });
