@@ -36,6 +36,11 @@ Endpoints added (all under /api/, same routing conventions as server_localAPI.js
 - PATCH  <lib>/items/:itemKey                        partial update
 - POST   <lib>/collections                           create/update up to 100 collections
 - DELETE <lib>/collections?collectionKey=K1,K2       delete collections
+- POST   <lib>/searches                              create/update up to 100 saved searches
+- DELETE <lib>/searches?searchKey=K1,K2              delete saved searches
+- GET    <lib>/settings                              return synced settings with metadata
+- POST   <lib>/settings                              create/update synced settings
+- DELETE <lib>/settings?settingKey=K1,K2             delete synced settings
 - POST   <lib>/capture                               thin capture: translate captured HTML
                                                      server-side, webpage-item fallback
 - POST   <lib>/items/:itemKey/file                   upload dance: authorize / register
@@ -327,6 +332,127 @@ Zotero.Server.LocalAPI.CollectionsWrite = writeEndpoint(class extends Zotero.Ser
 });
 Zotero.Server.Endpoints["/api/users/:userID/collections"] = Zotero.Server.LocalAPI.CollectionsWrite;
 Zotero.Server.Endpoints["/api/groups/:groupID/collections"] = Zotero.Server.LocalAPI.CollectionsWrite;
+
+
+Zotero.Server.LocalAPI.SearchesWrite = writeEndpoint(class extends Zotero.Server.LocalAPI.Searches {
+	supportedMethods = ['GET', 'POST', 'DELETE'];
+	supportedDataTypes = ['application/json'];
+
+	async run(requestData) {
+		if (requestData.method == 'POST') {
+			return this.runBatchWrite(requestData, {
+				plural: Zotero.Searches,
+				singularName: 'Search',
+				make: (json) => {
+					if (!json.name) {
+						throw new LocalAPIWritesError(400, "'name' property not provided");
+					}
+					if (!Array.isArray(json.conditions)) {
+						throw new LocalAPIWritesError(400, "'conditions' property must be an array");
+					}
+					return new Zotero.Search();
+				},
+			});
+		}
+		if (requestData.method == 'DELETE') {
+			return this.runBatchDelete(requestData, {
+				plural: Zotero.Searches,
+				keyParam: 'searchKey',
+			});
+		}
+		return super.run(requestData);
+	}
+});
+Zotero.Server.Endpoints["/api/users/:userID/searches"] = Zotero.Server.LocalAPI.SearchesWrite;
+Zotero.Server.Endpoints["/api/groups/:groupID/searches"] = Zotero.Server.LocalAPI.SearchesWrite;
+
+
+Zotero.Server.LocalAPI.SettingsWrite = writeEndpoint(class extends Zotero.Server.LocalAPI.Settings {
+	supportedMethods = ['GET', 'POST', 'DELETE'];
+	supportedDataTypes = ['application/json'];
+
+	async run(requestData) {
+		if (requestData.method == 'GET') {
+			let libraryVersion = Zotero.Libraries.get(requestData.libraryID).libraryVersion;
+			let header = requestData.headers.get('If-Modified-Since-Version');
+			if (header !== null) {
+				let version = parseInt(header);
+				if (Number.isNaN(version)) {
+					return this.makeResponse(400, 'text/plain', `Invalid 'If-Modified-Since-Version' value '${header}'`);
+				}
+				if (version >= libraryVersion) {
+					return this.makeResponse(304, 'text/plain', '');
+				}
+			}
+			let rows = await Zotero.DB.queryAsync(
+				"SELECT setting, value, version FROM syncedSettings WHERE libraryID=?",
+				requestData.libraryID
+			);
+			let settings = {};
+			for (let row of rows) {
+				settings[row.setting] = {
+					value: JSON.parse(row.value),
+					version: row.version,
+				};
+			}
+			return this.makeResponse(200, {
+				'Content-Type': 'application/json',
+				'Last-Modified-Version': libraryVersion,
+			}, JSON.stringify(settings, null, 4));
+		}
+
+		this.checkEditable(requestData);
+		this.checkLibraryPrecondition(requestData);
+		if (requestData.method == 'POST') {
+			let data = requestData.data;
+			if (!data || typeof data != 'object' || Array.isArray(data)) {
+				return this.makeResponse(400, 'text/plain', 'POST body must be a JSON object');
+			}
+			let entries = Object.entries(data);
+			if (entries.length > 100) {
+				return this.makeResponse(413, 'text/plain', 'Too many settings in one request (max 100)');
+			}
+			let failed = {};
+			for (let [key, wrapper] of entries) {
+				try {
+					if (!wrapper || typeof wrapper != 'object' || Array.isArray(wrapper)
+						|| !Object.prototype.hasOwnProperty.call(wrapper, 'value')) {
+						throw new LocalAPIWritesError(400, "Setting must contain a 'value' property");
+					}
+					await Zotero.SyncedSettings.set(requestData.libraryID, key, wrapper.value);
+				}
+				catch (e) {
+					if (!(e instanceof LocalAPIWritesError)) Zotero.logError(e);
+					failed[key] = {
+						code: e instanceof LocalAPIWritesError ? e.status : 400,
+						message: e.message,
+					};
+				}
+			}
+			if (Object.keys(failed).length) {
+				return this.makeResponse(200, 'application/json', JSON.stringify({ failed }, null, 4));
+			}
+			return this.makeResponse(204, 'text/plain', '');
+		}
+
+		let keysParam = requestData.searchParams.get('settingKey');
+		if (!keysParam) {
+			return this.makeResponse(400, 'text/plain', "'settingKey' query parameter is required");
+		}
+		let keys = keysParam.split(',').filter(Boolean);
+		if (keys.length > 100) {
+			return this.makeResponse(413, 'text/plain', 'Too many settings in one request (max 100)');
+		}
+		for (let key of keys) {
+			if (Zotero.SyncedSettings.get(requestData.libraryID, key) !== null) {
+				await Zotero.SyncedSettings.clear(requestData.libraryID, key);
+			}
+		}
+		return this.makeResponse(204, 'text/plain', '');
+	}
+});
+Zotero.Server.Endpoints["/api/users/:userID/settings"] = Zotero.Server.LocalAPI.SettingsWrite;
+Zotero.Server.Endpoints["/api/groups/:groupID/settings"] = Zotero.Server.LocalAPI.SettingsWrite;
 
 
 /**
