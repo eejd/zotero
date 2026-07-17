@@ -146,6 +146,9 @@ class LocalAPIEndpoint {
 		}
 		
 		let response = await this.run(requestData);
+		if (response?.streaming) {
+			return response;
+		}
 		if (response.data) {
 			let dataIsArray = Array.isArray(response.data);
 			if (dataIsArray && requestData.searchParams.has('since')) {

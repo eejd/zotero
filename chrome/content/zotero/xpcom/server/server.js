@@ -28,6 +28,7 @@ var { NetUtil } = ChromeUtils.importESModule("resource://gre/modules/NetUtil.sys
 
 Zotero.Server = new function () {
 	var _onlineObserverRegistered, serv;
+	this._activeStreams = new Set();
 	this.responseCodes = {
 		200:"OK",
 		201:"Created",
@@ -93,6 +94,9 @@ Zotero.Server = new function () {
 	 */
 	this.close = function () {
 		if (!serv) return;
+		for (let stream of [...this._activeStreams]) {
+			stream.close();
+		}
 		serv.stop();
 		serv = undefined;
 	};
@@ -465,13 +469,15 @@ Zotero.Server.RequestHandler.prototype._processEndpoint = async function (method
 		//   - Returns a status code, an array containing [statusCode, contentType, body],
 		//     or a promise for either
 		if (endpoint.init.length === 1) {
+			let stream = endpoint.streamResponse ? this._createStreamingResponse() : undefined;
 			let maybePromise = endpoint.init({
 				method,
 				pathname: this.pathname,
 				pathParams: this.pathParams,
 				searchParams: new URLSearchParams(this.query || ''),
 				headers: this.headers,
-				data
+				data,
+				stream
 			});
 			let result;
 			if (maybePromise.then) {
@@ -479,6 +485,9 @@ Zotero.Server.RequestHandler.prototype._processEndpoint = async function (method
 			}
 			else {
 				result = maybePromise;
+			}
+			if (result && result.streaming) {
+				return;
 			}
 			if (Number.isInteger(result)) {
 				sendResponseCallback(result);
@@ -505,6 +514,85 @@ Zotero.Server.RequestHandler.prototype._processEndpoint = async function (method
 		this._requestFinished(this._generateResponse(500), "text/plain", "An error occurred\n");
 		throw e;
 	}
+};
+
+/**
+ * Create a long-lived UTF-8 response used by streaming endpoints.
+ * The first write sends the response head without Content-Length; close() is idempotent.
+ */
+Zotero.Server.RequestHandler.prototype._createStreamingResponse = function () {
+	let handler = this;
+	let converter;
+	let started = false;
+	let closed = false;
+	let closeCallback;
+
+	let stream = {
+		get closed() {
+			return closed;
+		},
+
+		start(status = 200, headers = {}) {
+			if (started || closed) {
+				throw new Error('Streaming response already started');
+			}
+			started = true;
+			handler._responseSent = true;
+			converter = Components.classes['@mozilla.org/intl/converter-output-stream;1']
+				.createInstance(Components.interfaces.nsIConverterOutputStream);
+			converter.init(handler.response.bodyOutputStream, 'UTF-8', 1024, '?'.charCodeAt(0));
+
+			let response = `HTTP/1.0 ${status} ${Zotero.Server.responseCodes[status]}\r\n`;
+			response += `X-Zotero-Version: ${Zotero.version}\r\n`;
+			response += `X-Zotero-Connector-API-Version: ${CONNECTOR_API_VERSION}\r\n`;
+			for (let [name, value] of Object.entries(headers)) {
+				response += `${name}: ${value}\r\n`;
+			}
+			response += '\r\n';
+			converter.writeString(response);
+			converter.flush();
+			Zotero.Server._activeStreams.add(stream);
+		},
+
+		write(data) {
+			if (!started || closed) return false;
+			try {
+				converter.writeString(data);
+				converter.flush();
+				return true;
+			}
+			catch (e) {
+				Zotero.debug(`Streaming response closed: ${e}`, 4);
+				this.close();
+				return false;
+			}
+		},
+
+		onClose(callback) {
+			closeCallback = callback;
+		},
+
+		close() {
+			if (closed) return;
+			closed = true;
+			Zotero.Server._activeStreams.delete(stream);
+			try {
+				closeCallback?.();
+			}
+			catch (e) {
+				Zotero.logError(e);
+			}
+			if (started) {
+				try {
+					handler.response.finish();
+				}
+				catch (e) {
+					Zotero.debug(`Error finishing streaming response: ${e}`, 4);
+				}
+			}
+		}
+	};
+	return stream;
 };
 
 /*
