@@ -135,6 +135,7 @@ const xpcomFilesLocal = [
 	'server/server_connectorIntegration',
 	'server/server_localAPI',
 	'server/server_localAPI_writes',
+	'server/server_localAPI_changefeed',
 	'server/saveSession',
 	'session',
 	'streamer',

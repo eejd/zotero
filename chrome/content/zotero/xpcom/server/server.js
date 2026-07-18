@@ -28,6 +28,7 @@ var { NetUtil } = ChromeUtils.importESModule("resource://gre/modules/NetUtil.sys
 
 Zotero.Server = new function () {
 	var _onlineObserverRegistered, serv;
+	this._activeStreams = new Set();
 	this.responseCodes = {
 		200:"OK",
 		201:"Created",
@@ -93,6 +94,9 @@ Zotero.Server = new function () {
 	 */
 	this.close = function () {
 		if (!serv) return;
+		for (let stream of [...this._activeStreams]) {
+			stream.close();
+		}
 		serv.stop();
 		serv = undefined;
 	};
@@ -267,7 +271,7 @@ Zotero.Server.RequestHandler.prototype._bodyData = function () {
 /**
  * Generates the response to an HTTP request
  */
-Zotero.Server.RequestHandler.prototype._generateResponse = function (status, contentTypeOrHeaders, body) {
+Zotero.Server.RequestHandler.prototype._generateResponse = function (status, contentTypeOrHeaders, body, options = {}) {
 	var response = "HTTP/1.0 "+status+" "+Zotero.Server.responseCodes[status]+"\r\n";
 	response += "X-Zotero-Version: "+Zotero.version+"\r\n";
 	response += "X-Zotero-Connector-API-Version: "+CONNECTOR_API_VERSION+"\r\n";
@@ -289,7 +293,10 @@ Zotero.Server.RequestHandler.prototype._generateResponse = function (status, con
 		}
 	}
 	
-	if (body) {
+	if (options.streaming) {
+		response += "\r\n";
+	}
+	else if (body) {
 		response += "\r\n"+body;
 	} else {
 		response += "Content-Length: 0\r\n\r\n";
@@ -471,7 +478,9 @@ Zotero.Server.RequestHandler.prototype._processEndpoint = async function (method
 				pathParams: this.pathParams,
 				searchParams: new URLSearchParams(this.query || ''),
 				headers: this.headers,
-				data
+				data,
+				responseStarted: () => !!this._responseSent,
+				startStreamingResponse: (code, headers) => this._startStreamingResponse(code, headers)
 			});
 			let result;
 			if (maybePromise.then) {
@@ -484,6 +493,9 @@ Zotero.Server.RequestHandler.prototype._processEndpoint = async function (method
 				sendResponseCallback(result);
 			}
 			else {
+				if (this._responseSent) {
+					return;
+				}
 				sendResponseCallback(...result);
 			}
 		}
@@ -505,6 +517,92 @@ Zotero.Server.RequestHandler.prototype._processEndpoint = async function (method
 		this._requestFinished(this._generateResponse(500), "text/plain", "An error occurred\n");
 		throw e;
 	}
+};
+
+/**
+ * Start a manually framed response that remains open until close() is called.
+ *
+ * The server already seizes the underlying httpd response for every request. This helper keeps
+ * the converter and body stream alive so endpoints such as Server-Sent Events can append frames
+ * without teaching the request dispatcher about a particular streaming protocol.
+ *
+ * @param {Number} status
+ * @param {Object|String} headers
+ * @return {{write: Function, close: Function, addCloseListener: Function, closed: Boolean}}
+ */
+Zotero.Server.RequestHandler.prototype._startStreamingResponse = function (status, headers) {
+	if (this._responseSent) {
+		throw new Error("Response already started");
+	}
+	this._responseSent = true;
+
+	let intlStream = Components.classes["@mozilla.org/intl/converter-output-stream;1"]
+		.createInstance(Components.interfaces.nsIConverterOutputStream);
+	intlStream.init(this.response.bodyOutputStream, "UTF-8", 1024, "?".charCodeAt(0));
+
+	let closed = false;
+	let closeListeners = new Set();
+	let stream = {
+		get closed() {
+			return closed;
+		},
+		write: (data) => {
+			if (closed) return false;
+			// httpd's seized-response pipe can continue accepting buffered writes after the
+			// network peer disconnects. Check the owning connection before writing so long-lived
+			// streams release endpoint resources on the next frame or heartbeat.
+			let copier = this.response._asyncCopier;
+			if ((this.response._connection && this.response._connection._closed)
+					|| (copier && !copier.isPending())) {
+				stream.close();
+				return false;
+			}
+			try {
+				intlStream.writeString(data);
+				intlStream.flush();
+				return true;
+			}
+			catch (e) {
+				Zotero.debug(`Streaming response closed while writing: ${e}`, 4);
+				stream.close();
+				return false;
+			}
+		},
+		close: () => {
+			if (closed) return;
+			closed = true;
+			Zotero.Server._activeStreams.delete(stream);
+			for (let listener of closeListeners) {
+				try {
+					listener();
+				}
+				catch (e) {
+					Zotero.logError(e);
+				}
+			}
+			closeListeners.clear();
+			try {
+				this.response.finish();
+			}
+			catch (e) {
+				Zotero.debug(`Error finishing streaming response: ${e}`, 4);
+			}
+		},
+		addCloseListener: (listener) => {
+			if (closed) {
+				listener();
+				return;
+			}
+			closeListeners.add(listener);
+		}
+	};
+
+	let responseHead = this._generateResponse(status, headers, null, { streaming: true });
+	if (!stream.write(responseHead)) {
+		throw new Error("Unable to start streaming response");
+	}
+	Zotero.Server._activeStreams.add(stream);
+	return stream;
 };
 
 /*
