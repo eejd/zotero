@@ -162,11 +162,13 @@ describe("Local API Change Feed", function () {
 		let connection = openChangeFeed(`/groups/${group.id}/changefeed?since=0`);
 		await connection.nextFrame();
 
+		await createDataObject('item', { setTitle: true });
 		let item = await createDataObject('item', {
 			libraryID: group.libraryID,
 			setTitle: true
 		});
-		let frame = await waitForKey(connection, item.key);
+		let frame = await waitForEvent(connection);
+		assert.deepEqual(frame.data.keys, [item.key]);
 		assert.equal(frame.data.libraryID, group.libraryID);
 		assert.equal(frame.data.type, 'item');
 		assert.equal(frame.id, group.libraryVersion);
@@ -192,10 +194,13 @@ describe("Local API Change Feed", function () {
 		assert.equal(Zotero.Server.LocalAPI.ChangeFeed._subscriberCount(), 0);
 	});
 
-	it("should reject invalid resume cursors before opening a stream", async function () {
+	it("should prefer since and reject invalid resume cursors before opening a stream", async function () {
 		try {
 			await Zotero.HTTP.request('GET', apiRoot + '/users/0/changefeed?since=not-a-version', {
-				headers: { 'Zotero-Allowed-Request': '1' }
+				headers: {
+					'Last-Event-ID': '1',
+					'Zotero-Allowed-Request': '1'
+				}
 			});
 			assert.fail('Expected an invalid cursor response');
 		}
