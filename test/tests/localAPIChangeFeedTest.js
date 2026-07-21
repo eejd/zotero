@@ -109,6 +109,7 @@ describe("Local API Change Feed", function () {
 	it("should stream notifier changes using the actual library version", async function () {
 		let connection = openChangeFeed('/users/0/changefeed?since=0');
 		let connected = await connection.nextFrame();
+		dump(`CFTEST connected subscribers=${Zotero.Server.LocalAPI.ChangeFeed._subscriberCount()}\n`);
 		assert.equal(connected.comment, 'connected');
 		assert.equal(connection.xhr.status, 200);
 		assert.match(connection.xhr.getResponseHeader('Content-Type'), /^text\/event-stream/);
@@ -119,6 +120,7 @@ describe("Local API Change Feed", function () {
 		);
 
 		let item = await createDataObject('item', { setTitle: true });
+		dump(`CFTEST item=${item.id}/${item.key} version=${Zotero.Libraries.userLibrary.libraryVersion}\n`);
 		let frame = await waitForEvent(connection);
 		assert.equal(frame.event, 'change');
 		assert.equal(frame.id, frame.data.version);

@@ -179,6 +179,7 @@ Zotero.Server.LocalAPI.ChangeFeed = new function () {
 	}
 
 	function publish(libraryID, event, type, keys) {
+		dump(`CFFEED publish library=${libraryID} event=${event} type=${type} keys=${Array.from(keys)}\n`);
 		let state = getState(libraryID);
 		let library = Zotero.Libraries.get(libraryID);
 		let version = library && library.libraryVersion;
@@ -204,6 +205,7 @@ Zotero.Server.LocalAPI.ChangeFeed = new function () {
 	}
 
 	this.notify = function (event, type, ids, extraData) {
+		dump(`CFFEED notify event=${event} type=${type} ids=${ids}\n`);
 		if (!EVENTS.has(event) || !TYPES.has(type)) return;
 		let changes = changesForNotifierEvent(type, ids, extraData || {});
 		for (let [libraryID, keys] of changes) {
