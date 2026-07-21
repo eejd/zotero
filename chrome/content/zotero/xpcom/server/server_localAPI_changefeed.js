@@ -218,6 +218,13 @@ Zotero.Server.LocalAPI.ChangeFeed = new function () {
 		state.subscribers.add(subscriber);
 		stream.addCloseListener(() => removeSubscriber(state, subscriber));
 		startHeartbeat.call(this);
+		// Do not report the connection as ready until the notifier observer and subscriber are
+		// registered. Otherwise a client can receive this frame, perform a write immediately, and
+		// lose the resulting notification before subscribe() finishes.
+		if (!stream.write(': connected\n\n')) {
+			removeSubscriber(state, subscriber);
+			return subscriber;
+		}
 
 		for (let changeEvent of state.events) {
 			if ((changeEvent.version > since
@@ -284,7 +291,6 @@ Zotero.Server.LocalAPI.ChangeFeedEndpoint = class extends Zotero.Server.LocalAPI
 			'Connection': 'keep-alive'
 		}, '');
 		let stream = requestData.startStreamingResponse(200, headers);
-		stream.write(': connected\n\n');
 		Zotero.Server.LocalAPI.ChangeFeed.subscribe(
 			requestData.libraryID, since, explicitResume, stream
 		);
