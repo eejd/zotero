@@ -95,7 +95,10 @@ describe("Local API Change Feed", function () {
 	before(async function () {
 		this.timeout(10000);
 		await resetDB({ thisArg: this });
-		apiRoot = 'http://127.0.0.1:' + Zotero.Server.port + '/api';
+		// Keep the long-lived SSE request out of the 127.0.0.1 connection pool used by the rest
+		// of the test suite. Earlier tests can leave that pool saturated with pending requests,
+		// preventing this request from reaching the server at all.
+		apiRoot = 'http://localhost:' + Zotero.Server.port + '/api';
 	});
 
 	beforeEach(function () {
