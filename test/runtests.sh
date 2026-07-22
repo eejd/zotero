@@ -1,6 +1,18 @@
 #!/bin/bash
+set -o pipefail
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$( cd "$( dirname "$SCRIPT_DIR" )" && pwd )"
+TEST_PORT="${ZOTERO_TEST_PORT:-23124}"
+RUN_TIMEOUT="${ZOTERO_TEST_RUN_TIMEOUT:-1800}"
+CHILD_PID=""
+LOCK_DIR=""
+LOCK_OWNED=0
+
+[[ "$TEST_PORT" =~ ^[0-9]+$ ]] && [ "$TEST_PORT" -ge 1 ] && [ "$TEST_PORT" -le 65535 ] \
+	|| { echo "ZOTERO_TEST_PORT must be an integer from 1 to 65535" >&2; exit 2; }
+[[ "$RUN_TIMEOUT" =~ ^[0-9]+$ ]] && [ "$RUN_TIMEOUT" -ge 1 ] \
+	|| { echo "ZOTERO_TEST_RUN_TIMEOUT must be a positive integer" >&2; exit 2; }
 
 case "$OSTYPE" in
   msys*|mingw*|cygwin*) IS_CYGWIN=1 ;;
@@ -148,7 +160,7 @@ user_pref("extensions.zotero.firstRunGuidance", false);
 user_pref("extensions.zotero.firstRun2", false);
 user_pref("extensions.zotero.reportTranslationFailure", false);
 user_pref("extensions.zotero.httpServer.enabled", true);
-user_pref("extensions.zotero.httpServer.port", 23124);	// ascii "ZT"
+user_pref("extensions.zotero.httpServer.port", $TEST_PORT);
 user_pref("extensions.zotero.httpServer.localAPI.enabled", true);
 user_pref("extensions.zotero.backup.numBackups", 0);
 user_pref("extensions.zotero.sync.autoSync", false);
@@ -159,13 +171,111 @@ user_pref("extensions.zoteroOpenOfficeIntegration.skipInstallation", true);
 EOF
 
 if [ -n "$CI" ]; then
-	Z_ARGS="$Z_ARGS -ZoteroAutomatedTest -ZoteroTestTimeout 15000"
+	Z_ARGS="$Z_ARGS -ZoteroAutomatedTest -ZoteroTestTimeout 15000 -ZoteroDebugText"
 else
 	Z_ARGS="$Z_ARGS -jsconsole"
 fi
 
-# Clean up on exit
-trap "{ rm -rf \"$TEMPDIR\"; }" EXIT
+function cleanup {
+	local status=$?
+	if [ -n "$CHILD_PID" ] && kill -0 "$CHILD_PID" 2>/dev/null; then
+		kill "$CHILD_PID" 2>/dev/null || true
+	fi
+	rm -rf "$TEMPDIR"
+	if [ "$LOCK_OWNED" = "1" ] && [ -n "$LOCK_DIR" ]; then
+		rm -rf "$LOCK_DIR"
+	fi
+	return $status
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+function lock_identity {
+	if [ "$(uname)" = "Darwin" ]; then
+		local plist identity=""
+		plist="$(dirname "$(dirname "$Z_EXECUTABLE")")/Info.plist"
+		if [ -f "$plist" ]; then
+			identity="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist" 2>/dev/null || true)"
+		fi
+		echo "${ZOTERO_TEST_BUNDLE_ID:-${identity:-org.zotero.zotero-source}}"
+	else
+		echo "${ZOTERO_TEST_BUNDLE_ID:-zotero@zotero.org}"
+	fi
+}
+
+function acquire_lock {
+	local identity safe_identity lock_root owner
+	identity="$(lock_identity)"
+	safe_identity="$(printf '%s' "$identity" | tr -c 'A-Za-z0-9_.-' '_')"
+	lock_root="${ZOTERO_TEST_LOCK_ROOT:-${TMPDIR:-/tmp}/zotero-test-locks}"
+	LOCK_DIR="$lock_root/${safe_identity}-port-$TEST_PORT.lock"
+	mkdir -p "$lock_root"
+	if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+		owner="$(cat "$LOCK_DIR/pid" 2>/dev/null || true)"
+		if [[ "$owner" =~ ^[0-9]+$ ]] && kill -0 "$owner" 2>/dev/null; then
+			echo "REFUSING duplicate Zotero test run: pid $owner owns $identity on port $TEST_PORT ($LOCK_DIR)" >&2
+			exit 1
+		fi
+		echo "Removing stale Zotero test lock $LOCK_DIR (recorded pid ${owner:-unknown})" >&2
+		rm -rf "$LOCK_DIR"
+		mkdir "$LOCK_DIR" || { echo "Could not acquire Zotero test lock $LOCK_DIR" >&2; exit 1; }
+	fi
+	printf '%s\n' "$$" > "$LOCK_DIR/pid"
+	printf '%s\n' "$identity" > "$LOCK_DIR/identity"
+	LOCK_OWNED=1
+}
+
+function validate_staging {
+	local app_root app_resources app_omni runtime_omni updater missing=0
+	if [ "$(uname)" = "Darwin" ]; then
+		app_root="$ROOT_DIR/app/staging/Zotero.app/Contents"
+		app_resources="$app_root/Resources/app"
+		updater="$app_root/MacOS/updater.app/Contents/MacOS/org.mozilla.updater"
+		runtime_omni="$app_root/Resources/omni.ja"
+	else
+		app_root="$(dirname "$Z_EXECUTABLE")"
+		app_resources="$app_root/app"
+		if [ -n "$IS_CYGWIN" ]; then updater="$app_root/updater.exe"; else updater="$app_root/updater"; fi
+		runtime_omni="$app_root/omni.ja"
+	fi
+	app_omni="$app_resources/omni.ja"
+	for path in \
+		"$app_resources/application.ini" \
+		"$runtime_omni" \
+		"$app_omni" \
+		"$updater" \
+		"$Z_EXECUTABLE"; do
+		if [ ! -f "$path" ]; then echo "Missing required staging artifact: $path" >&2; missing=1; fi
+	done
+	if [ "$missing" = "0" ]; then
+		for resource in test/content/runtests.js test/components/zotero-unit.js test/tests/serverTest.js; do
+			if ! unzip -Z1 "$app_omni" | grep -Fx "$resource" >/dev/null; then
+				echo "Missing required test resource in $app_omni: $resource" >&2
+				missing=1
+			fi
+		done
+	fi
+	[ "$missing" = "0" ] || return 1
+	[ -x "$Z_EXECUTABLE" ] || { echo "Staging executable is not executable: $Z_EXECUTABLE" >&2; return 1; }
+}
+
+function report_launch_failure {
+	local reason="$1"
+	echo "$reason" >&2
+	echo "Zotero test log: $STAGING_LOG" >&2
+	if [ -s "$STAGING_LOG" ]; then
+		echo "--- log tail ---" >&2
+		tail -n 80 "$STAGING_LOG" >&2
+	fi
+	if [ "$(uname)" = "Darwin" ]; then
+		echo "Native crash reports: $HOME/Library/Logs/DiagnosticReports" >&2
+	else
+		echo "Crash dumps, if generated: $PROFILE/minidumps" >&2
+	fi
+}
+
+acquire_lock
 
 # Check if build watch process is running
 # If not, run now
@@ -177,14 +287,47 @@ if [[ -z "$CI" ]] && ! ps | grep js-build/build.js | grep -v grep > /dev/null; t
 	echo
 fi
 
-ZOTERO_TEST=1 "$ROOT_DIR/app/scripts/dir_build" -q
+if ! ZOTERO_TEST=1 "$ROOT_DIR/app/scripts/dir_build" -q; then
+	echo "Zotero test build failed; refusing to launch an incomplete staging application" >&2
+	exit 1
+fi
+
+validate_staging || {
+	echo "Zotero test staging validation failed; refusing to launch" >&2
+	exit 1
+}
 
 makePath FX_PROFILE "$PROFILE"
-MOZ_NO_REMOTE=1 NO_EM_RESTART=1 "$Z_EXECUTABLE" -profile "$FX_PROFILE" \
-    -test "$TESTS" -grep "$GREP" -retries "$RETRIES" -ZoteroTest $Z_ARGS
+STAGING_LOG="${ZOTERO_TEST_LOG:-$ROOT_DIR/app/staging/zotero-test.log}"
+: > "$STAGING_LOG"
+MOZ_NO_REMOTE=1 NO_EM_RESTART=1 "$Z_EXECUTABLE" -no-remote -profile "$FX_PROFILE" \
+    -test "$TESTS" -grep "$GREP" -retries "$RETRIES" -ZoteroTest $Z_ARGS \
+    >"$STAGING_LOG" 2>&1 &
+CHILD_PID=$!
+printf '%s\n' "$CHILD_PID" > "$LOCK_DIR/pid"
+
+start_time=$(date +%s)
+while kill -0 "$CHILD_PID" 2>/dev/null; do
+	if [ $(( $(date +%s) - start_time )) -ge "$RUN_TIMEOUT" ]; then
+		report_launch_failure "Zotero test run timed out after ${RUN_TIMEOUT}s (pid $CHILD_PID)"
+		kill "$CHILD_PID" 2>/dev/null || true
+		wait "$CHILD_PID" 2>/dev/null || true
+		CHILD_PID=""
+		exit 124
+	fi
+	sleep 1
+done
+
+wait "$CHILD_PID"
+CHILD_STATUS=$?
+CHILD_PID=""
 
 # Check for success
-test -e "$PROFILE/success"
-STATUS=$?
+if [ "$CHILD_STATUS" != "0" ] || [ ! -e "$PROFILE/success" ]; then
+	FAILURE_STATUS="$CHILD_STATUS"
+	[ "$FAILURE_STATUS" != "0" ] || FAILURE_STATUS=1
+	report_launch_failure "Zotero exited before reporting test success (status $CHILD_STATUS)"
+	exit "$FAILURE_STATUS"
+fi
 
-exit $STATUS
+exit 0
