@@ -1,25 +1,57 @@
 "use strict";
 
-describe("Local API Writes", function () {
+describe("Local API fork extensions (settings, capture)", function () {
 	let apiRoot;
 	let userLibraryID;
+	let serverID;
+	let writeAPIKey;
 
 	function apiRequest(method, endpoint, options = {}) {
+		let { headers, skipAPIKey, skipServerID, ...rest } = options;
+		let requestHeaders = {
+			"Zotero-Allowed-Request": "1",
+			...(headers || {})
+		};
+		if (method != "GET" && !skipAPIKey && writeAPIKey && !requestHeaders["Zotero-API-Key"]) {
+			requestHeaders["Zotero-API-Key"] = writeAPIKey;
+		}
+		if (method != "GET" && !skipServerID && serverID && !requestHeaders["Zotero-Server-ID"]) {
+			requestHeaders["Zotero-Server-ID"] = serverID;
+		}
 		return Zotero.HTTP.request(method, apiRoot + endpoint, {
-			...options,
-			headers: {
-				'Zotero-Allowed-Request': '1',
-				...(options.headers || {})
-			}
+			...rest,
+			headers: requestHeaders
 		});
 	}
 
-	function apiPostJSON(endpoint, body, headers = {}) {
-		return apiRequest('POST', endpoint, {
-			headers: { 'Content-Type': 'application/json', ...headers },
+	function apiPostJSON(endpoint, body, options = {}) {
+		return apiRequest("POST", endpoint, {
+			...options,
+			headers: { "Content-Type": "application/json", ...(options.headers || {}) },
 			body: JSON.stringify(body),
-			responseType: 'json'
+			responseType: "json"
 		});
+	}
+
+	// Obtain a remembered API key through the stock authorization endpoint
+	async function setupRememberedAPIKey(appName = "Fork Extension Tests") {
+		let stub = sinon.stub(Zotero.Server.LocalAPI, "_promptForAuthorization")
+			.resolves({ allow: true, remember: true });
+		try {
+			let { response } = await Zotero.HTTP.request("POST", apiRoot + "/local/authorize", {
+				headers: {
+					"Zotero-Allowed-Request": "1",
+					"Content-Type": "application/json",
+					"Zotero-Server-ID": serverID,
+				},
+				body: JSON.stringify({ appName }),
+				responseType: "json"
+			});
+			return response.key;
+		}
+		finally {
+			stub.restore();
+		}
 	}
 
 	before(async function () {
@@ -28,182 +60,26 @@ describe("Local API Writes", function () {
 		await resetDB({
 			thisArg: this
 		});
-		apiRoot = 'http://127.0.0.1:' + Zotero.Server.port + '/api';
+		apiRoot = "http://127.0.0.1:" + Zotero.Server.port + "/api";
 		userLibraryID = Zotero.Libraries.userLibraryID;
+		serverID = Zotero.Server.LocalAPI.getServerID();
+		writeAPIKey = await setupRememberedAPIKey();
 	});
 
-	describe("POST /api/users/:userID/items", function () {
-		it("should create items in one batch and return a WriteResult", async function () {
-			let response = await apiPostJSON('/users/0/items', [
-				{
-					itemType: 'journalArticle',
-					title: 'Batch Item One',
-					creators: [{ creatorType: 'author', firstName: 'A', lastName: 'B' }],
-					tags: [{ tag: 'batch' }]
-				},
-				{
-					itemType: 'book',
-					title: 'Batch Item Two'
-				}
-			]);
-			assert.equal(response.status, 200);
-			let result = response.response;
-			assert.lengthOf(Object.keys(result.successful), 2);
-			assert.deepEqual(result.failed, {});
-			assert.equal(result.successful['0'].data.title, 'Batch Item One');
-			assert.equal(result.successful['0'].data.tags[0].tag, 'batch');
-			let item = Zotero.Items.getByLibraryAndKey(userLibraryID, result.success['0']);
-			assert.ok(item);
-			assert.equal(item.getField('title'), 'Batch Item One');
+	describe("write authentication (inherited from stock)", function () {
+		it("should return 428 for a write without a Zotero-Server-ID", async function () {
+			let e = await getPromiseError(apiPostJSON("/users/0/settings", { s: { value: 1 } }, { skipServerID: true }));
+			assert.equal(e.status, 428);
 		});
 
-		it("should honor a client-supplied key for a new item", async function () {
-			let key = Zotero.DataObjectUtilities.generateKey();
-			let response = await apiPostJSON('/users/0/items', [
-				{ itemType: 'book', key, title: 'Client Key Item' }
-			]);
-			assert.equal(response.status, 200);
-			assert.equal(response.response.success['0'], key);
-			assert.ok(Zotero.Items.getByLibraryAndKey(userLibraryID, key));
+		it("should return 401 for a write with the server ID but no API key", async function () {
+			let e = await getPromiseError(apiPostJSON("/users/0/capture", { url: "https://example.org/x" }, { skipAPIKey: true }));
+			assert.equal(e.status, 401);
 		});
 
-		it("should fail an individual object on a version mismatch", async function () {
-			let item = await createDataObject('item', { setTitle: true });
-			item.version = 5;
-			await item.saveTx({ skipAll: true });
-			let response = await apiPostJSON('/users/0/items', [
-				{ itemType: 'book', key: item.key, version: 1, title: 'Stale Update' }
-			]);
-			assert.equal(response.status, 200);
-			let failure = response.response.failed['0'];
-			assert.equal(failure.code, 412);
-			assert.notEqual(item.getField('title'), 'Stale Update');
-		});
-
-		it("should return 412 when If-Unmodified-Since-Version is stale", async function () {
-			let library = Zotero.Libraries.get(userLibraryID);
-			let previousVersion = library.libraryVersion;
-			library.libraryVersion = 10;
-			await library.saveTx();
-			try {
-				let response = await apiPostJSON('/users/0/items',
-					[{ itemType: 'book', title: 'Rejected' }],
-					{ 'If-Unmodified-Since-Version': '5' });
-				assert.fail('Expected 412, got ' + response.status);
-			}
-			catch (e) {
-				assert.equal(e.status, 412);
-			}
-			finally {
-				// The setter forbids decreases except to the -1 "full sync needed" sentinel,
-				// so restore by resetting first
-				library.libraryVersion = -1;
-				if (previousVersion >= 0) {
-					library.libraryVersion = previousVersion;
-				}
-				await library.saveTx();
-			}
-		});
-
-		it("should return 413 for more than 100 objects", async function () {
-			let body = Array.from({ length: 101 }, (_, i) => ({ itemType: 'book', title: `Overflow ${i}` }));
-			try {
-				let response = await apiPostJSON('/users/0/items', body);
-				assert.fail('Expected 413, got ' + response.status);
-			}
-			catch (e) {
-				assert.equal(e.status, 413);
-			}
-		});
-	});
-
-	describe("PATCH /api/users/:userID/items/:itemKey", function () {
-		it("should merge-patch, preserving unlisted fields", async function () {
-			let item = await createDataObject('item', { itemType: 'journalArticle' });
-			item.setField('title', 'Patch Target');
-			item.setField('abstractNote', 'before');
-			await item.saveTx();
-			let response = await apiRequest('PATCH', `/users/0/items/${item.key}`, {
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ abstractNote: 'after' }),
-				successCodes: [204]
-			});
-			assert.equal(response.status, 204);
-			assert.equal(item.getField('abstractNote'), 'after');
-			assert.equal(item.getField('title'), 'Patch Target');
-		});
-
-		it("should return 412 on a body version mismatch", async function () {
-			let item = await createDataObject('item', { setTitle: true });
-			item.version = 7;
-			await item.saveTx({ skipAll: true });
-			try {
-				await apiRequest('PATCH', `/users/0/items/${item.key}`, {
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ version: 2, abstractNote: 'stale' })
-				});
-				assert.fail('Expected 412');
-			}
-			catch (e) {
-				assert.equal(e.status, 412);
-			}
-		});
-
-		it("should return 404 for a missing item", async function () {
-			try {
-				await apiRequest('PATCH', '/users/0/items/AAAAAAAA', {
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ abstractNote: 'x' })
-				});
-				assert.fail('Expected 404');
-			}
-			catch (e) {
-				assert.equal(e.status, 404);
-			}
-		});
-	});
-
-	describe("DELETE /api/users/:userID/items", function () {
-		it("should delete existing items and ignore unknown keys", async function () {
-			let item1 = await createDataObject('item', { setTitle: true });
-			let item2 = await createDataObject('item', { setTitle: true });
-			let response = await apiRequest('DELETE',
-				`/users/0/items?itemKey=${item1.key},${item2.key},AAAAAAAA`,
-				{ successCodes: [204] });
-			assert.equal(response.status, 204);
-			assert.isFalse(Zotero.Items.getByLibraryAndKey(userLibraryID, item1.key));
-			assert.isFalse(Zotero.Items.getByLibraryAndKey(userLibraryID, item2.key));
-		});
-	});
-
-	describe("POST + DELETE /api/users/:userID/collections", function () {
-		it("should round-trip a collection", async function () {
-			let response = await apiPostJSON('/users/0/collections', [
-				{ name: 'Write Test Collection' }
-			]);
-			assert.equal(response.status, 200);
-			let key = response.response.success['0'];
-			assert.ok(Zotero.Collections.getByLibraryAndKey(userLibraryID, key));
-			await apiRequest('DELETE', `/users/0/collections?collectionKey=${key}`, { successCodes: [204] });
-			assert.isFalse(Zotero.Collections.getByLibraryAndKey(userLibraryID, key));
-		});
-	});
-
-	describe("POST + DELETE /api/users/:userID/searches", function () {
-		it("should round-trip a saved search", async function () {
-			let response = await apiPostJSON('/users/0/searches', [{
-				name: 'Local API Search',
-				conditions: [{ condition: 'title', operator: 'contains', value: 'zotero' }]
-			}]);
-			assert.equal(response.status, 200);
-			let key = response.response.success['0'];
-			let search = Zotero.Searches.getByLibraryAndKey(userLibraryID, key);
-			assert.ok(search);
-			assert.equal(search.name, 'Local API Search');
-			assert.equal(search.getConditions()[0].value, 'zotero');
-
-			await apiRequest('DELETE', `/users/0/searches?searchKey=${key}`, { successCodes: [204] });
-			assert.isFalse(Zotero.Searches.getByLibraryAndKey(userLibraryID, key));
+		it("should not apply a settings write rejected for authentication", async function () {
+			await getPromiseError(apiPostJSON("/users/0/settings", { unauthSetting: { value: 1 } }, { skipAPIKey: true }));
+			assert.isNull(Zotero.SyncedSettings.get(userLibraryID, "unauthSetting"));
 		});
 	});
 
@@ -227,7 +103,7 @@ describe("Local API Writes", function () {
 		});
 
 		it("should return 304 for a current If-Modified-Since-Version", async function () {
-			let version = Zotero.Libraries.get(userLibraryID).libraryVersion;
+			let version = Zotero.Libraries.get(userLibraryID).clientVersion;
 			let response = await apiRequest('GET', '/users/0/settings', {
 				headers: { 'If-Modified-Since-Version': String(version) },
 				successCodes: [304]
@@ -256,6 +132,35 @@ describe("Local API Writes", function () {
 			await apiRequest('DELETE', `/groups/${group.groupID}/settings?settingKey=groupSetting`, {
 				successCodes: [204]
 			});
+		});
+
+		it("should change the client counter so a stale If-Modified-Since-Version GET returns 200", async function () {
+			let before = Zotero.Libraries.get(userLibraryID).clientVersion;
+			await apiPostJSON("/users/0/settings", { counterSetting: { value: "a" } });
+			let after = Zotero.Libraries.get(userLibraryID).clientVersion;
+			assert.isAbove(after, before);
+			let response = await apiRequest("GET", "/users/0/settings", {
+				headers: { "If-Modified-Since-Version": String(before) },
+				responseType: "json"
+			});
+			assert.equal(response.status, 200);
+			assert.equal(response.getResponseHeader("Last-Modified-Version"), String(after));
+			await apiRequest("DELETE", "/users/0/settings?settingKey=counterSetting", { successCodes: [204] });
+		});
+
+		it("should not change the counter when no setting changes", async function () {
+			await apiPostJSON("/users/0/settings", { counterNoop: { value: "a" } });
+			let before = Zotero.Libraries.get(userLibraryID).clientVersion;
+			await apiRequest("DELETE", "/users/0/settings?settingKey=doesNotExist", { successCodes: [204] });
+			assert.equal(Zotero.Libraries.get(userLibraryID).clientVersion, before);
+			await apiRequest("DELETE", "/users/0/settings?settingKey=counterNoop", { successCodes: [204] });
+		});
+
+		it("should not bump the sync-owned libraryVersion", async function () {
+			let before = Zotero.Libraries.get(userLibraryID).libraryVersion;
+			await apiPostJSON("/users/0/settings", { syncVersionSetting: { value: 1 } });
+			assert.equal(Zotero.Libraries.get(userLibraryID).libraryVersion, before);
+			await apiRequest("DELETE", "/users/0/settings?settingKey=syncVersionSetting", { successCodes: [204] });
 		});
 	});
 
@@ -367,104 +272,6 @@ describe("Local API Writes", function () {
 			}
 			catch (e) {
 				assert.equal(e.status, 400);
-			}
-		});
-	});
-
-	describe("file upload dance", function () {
-		it("should authorize, accept bytes, register, and serve the file", async function () {
-			let bytes = 'fake pdf bytes for upload test';
-			let md5 = Zotero.Utilities.Internal.md5(bytes);
-
-			// 1. Create a standalone imported-file attachment item
-			let createResponse = await apiPostJSON('/users/0/items', [{
-				itemType: 'attachment',
-				linkMode: 'imported_file',
-				title: 'Upload Dance Target',
-				filename: 'upload-test.txt',
-				contentType: 'text/plain'
-			}]);
-			assert.equal(createResponse.status, 200);
-			let itemKey = createResponse.response.success['0'];
-
-			// 2. Authorize
-			let authResponse = await apiRequest('POST', `/users/0/items/${itemKey}/file`, {
-				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-					'If-None-Match': '*'
-				},
-				body: `md5=${md5}&filename=upload-test.txt&filesize=${bytes.length}&mtime=1700000000000`,
-				responseType: 'json'
-			});
-			assert.equal(authResponse.status, 200);
-			let auth = authResponse.response;
-			assert.ok(auth.uploadKey);
-			assert.include(auth.url, `/items/${itemKey}/file/upload/${auth.uploadKey}`);
-
-			// 3. Upload the bytes
-			let uploadResponse = await Zotero.HTTP.request('POST', auth.url, {
-				headers: {
-					'Zotero-Allowed-Request': '1',
-					'Content-Type': 'application/octet-stream'
-				},
-				body: bytes,
-				successCodes: [201]
-			});
-			assert.equal(uploadResponse.status, 201);
-
-			// 4. Register
-			let registerResponse = await apiRequest('POST', `/users/0/items/${itemKey}/file`, {
-				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-					'If-None-Match': '*'
-				},
-				body: `upload=${auth.uploadKey}`,
-				successCodes: [204]
-			});
-			assert.equal(registerResponse.status, 204);
-
-			let item = Zotero.Items.getByLibraryAndKey(userLibraryID, itemKey);
-			assert.isTrue(await item.fileExists());
-			assert.equal(await item.attachmentHash, md5);
-			assert.equal(item.attachmentSyncedHash, md5);
-
-			// 5. Same md5 authorizes to {exists: 1}; a new file precondition now fails
-			let existsResponse = await apiRequest('POST', `/users/0/items/${itemKey}/file`, {
-				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-					'If-Match': md5
-				},
-				body: `md5=${md5}&filename=upload-test.txt&filesize=${bytes.length}&mtime=1700000000000`,
-				responseType: 'json'
-			});
-			assert.equal(existsResponse.response.exists, 1);
-
-			try {
-				await apiRequest('POST', `/users/0/items/${itemKey}/file`, {
-					headers: {
-						'Content-Type': 'application/x-www-form-urlencoded',
-						'If-None-Match': '*'
-					},
-					body: `md5=${md5}&filename=upload-test.txt&filesize=${bytes.length}&mtime=1700000000000`
-				});
-				assert.fail('Expected 412');
-			}
-			catch (e) {
-				assert.equal(e.status, 412);
-			}
-		});
-
-		it("should return 410 for an unknown upload key", async function () {
-			let item = await importFileAttachment('test.png');
-			try {
-				await apiRequest('POST', `/users/0/items/${item.key}/file/upload/UNKNOWNKEY123456`, {
-					headers: { 'Content-Type': 'application/octet-stream' },
-					body: 'x'
-				});
-				assert.fail('Expected 410');
-			}
-			catch (e) {
-				assert.equal(e.status, 410);
 			}
 		});
 	});

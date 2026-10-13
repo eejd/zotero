@@ -106,7 +106,7 @@ describe("Local API Change Feed", function () {
 		Zotero.Server.LocalAPI.ChangeFeed._reset();
 	});
 
-	it("should stream notifier changes using the actual library version", async function () {
+	it("should stream notifier changes using the library client version", async function () {
 		let connection = openChangeFeed('/users/0/changefeed?since=0');
 		let connected = await connection.nextFrame();
 		assert.equal(connected.comment, 'connected');
@@ -126,7 +126,7 @@ describe("Local API Change Feed", function () {
 		assert.equal(frame.data.type, 'item');
 		assert.deepEqual(frame.data.keys, [item.key]);
 		assert.equal(frame.data.libraryID, Zotero.Libraries.userLibraryID);
-		assert.equal(frame.id, Zotero.Libraries.userLibrary.libraryVersion);
+		assert.equal(frame.id, Zotero.Libraries.userLibrary.clientVersion);
 		connection.abort();
 	});
 
@@ -142,7 +142,7 @@ describe("Local API Change Feed", function () {
 		let sinceConnection = openChangeFeed(`/users/0/changefeed?since=${firstFrame.id}`);
 		await sinceConnection.nextFrame();
 		let secondFrame = await waitForKey(sinceConnection, secondItem.key);
-		assert.equal(secondFrame.id, firstFrame.id);
+		assert.isAbove(secondFrame.id, firstFrame.id);
 		assert.deepEqual(secondFrame.data.keys, [secondItem.key]);
 		sinceConnection.abort();
 
@@ -152,7 +152,7 @@ describe("Local API Change Feed", function () {
 		});
 		await headerConnection.nextFrame();
 		let thirdFrame = await waitForKey(headerConnection, thirdItem.key);
-		assert.equal(thirdFrame.id, secondFrame.id);
+		assert.isAbove(thirdFrame.id, secondFrame.id);
 		assert.deepEqual(thirdFrame.data.keys, [thirdItem.key]);
 		headerConnection.abort();
 	});
@@ -171,8 +171,48 @@ describe("Local API Change Feed", function () {
 		assert.deepEqual(frame.data.keys, [item.key]);
 		assert.equal(frame.data.libraryID, group.libraryID);
 		assert.equal(frame.data.type, 'item');
-		assert.equal(frame.id, group.libraryVersion);
+		assert.equal(frame.id, Zotero.Libraries.get(group.libraryID).clientVersion);
 		connection.abort();
+	});
+
+	it("should assign increasing ids to events from separate transactions", async function () {
+		let connection = openChangeFeed('/users/0/changefeed?since=0');
+		await connection.nextFrame();
+		let first = await createDataObject('item', { setTitle: true });
+		let firstFrame = await waitForKey(connection, first.key);
+		let second = await createDataObject('item', { setTitle: true });
+		let secondFrame = await waitForKey(connection, second.key);
+		assert.isAbove(secondFrame.id, firstFrame.id);
+		connection.abort();
+	});
+
+	it("should retain every event sharing a cursor on resume", async function () {
+		let first = new Zotero.Item('book');
+		first.setField('title', 'Shared cursor A');
+		let second = new Zotero.Item('book');
+		second.setField('title', 'Shared cursor B');
+		let connection = openChangeFeed('/users/0/changefeed?since=0');
+		await connection.nextFrame();
+		await Zotero.DB.executeTransaction(async () => {
+			await first.save();
+			await second.save();
+		});
+		let seen = new Map();
+		while (!(seen.has(first.key) && seen.has(second.key))) {
+			let frame = await waitForEvent(connection);
+			for (let key of frame.data.keys) seen.set(key, frame.id);
+		}
+		assert.equal(seen.get(first.key), seen.get(second.key));
+		connection.abort();
+
+		let resumed = openChangeFeed(`/users/0/changefeed?since=${seen.get(first.key)}`);
+		await resumed.nextFrame();
+		let resumedKeys = new Set();
+		while (!(resumedKeys.has(first.key) && resumedKeys.has(second.key))) {
+			let frame = await waitForEvent(resumed);
+			for (let key of frame.data.keys) resumedKeys.add(key);
+		}
+		resumed.abort();
 	});
 
 	it("should send heartbeats and release disconnected subscribers", async function () {

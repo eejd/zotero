@@ -28,11 +28,12 @@
 /*
 Phase 3 change feed for the native-split oracle.
 
-Local edits deliberately do not advance Zotero.Library#libraryVersion: that value belongs to the
-sync protocol, and changing it locally would desynchronize the existing JS sync engine. ChangeEvent
-versions and SSE ids remain the actual libraryVersion required by ADR-0008. An explicit resume
-therefore replays events at the resume version as well as later versions: local edits can share a
-version, so at-least-once delivery is the only way to avoid silently dropping one of them.
+Local edits never advance Zotero.Library#libraryVersion: that value belongs to the sync protocol,
+and changing it locally would desynchronize the sync engine. ChangeEvent versions and SSE ids are
+the library's local monotonic clientVersion, which every local write transaction increments once.
+Events from one transaction share a clientVersion, so an explicit resume replays events at the
+resume version as well as later versions: at-least-once delivery is the only way to avoid silently
+dropping one of them.
 
 The replay log is process-local and begins when the first subscriber connects. Reconnects during a
 running Zotero session are lossless; after an application restart clients must perform their normal
@@ -181,7 +182,7 @@ Zotero.Server.LocalAPI.ChangeFeed = new function () {
 	function publish(libraryID, event, type, keys) {
 		let state = getState(libraryID);
 		let library = Zotero.Libraries.get(libraryID);
-		let version = library && library.libraryVersion;
+		let version = library && library.clientVersion;
 		if (!Number.isInteger(version)) return;
 		let changeEvent = {
 			event,
@@ -272,7 +273,7 @@ Zotero.Server.LocalAPI.ChangeFeedEndpoint = class extends Zotero.Server.LocalAPI
 			? requestData.searchParams.get('since')
 			: requestData.headers.get('Last-Event-ID');
 		if (sinceValue === null) {
-			sinceValue = String(Zotero.Libraries.get(requestData.libraryID).libraryVersion);
+			sinceValue = String(Zotero.Libraries.get(requestData.libraryID).clientVersion);
 		}
 		let since = Number(sinceValue);
 		if (!/^\d+$/.test(sinceValue) || !Number.isSafeInteger(since)) {

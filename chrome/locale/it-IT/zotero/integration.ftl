@@ -32,6 +32,7 @@ integration-citationDialog-section-cited =
 integration-citationDialog-details-suffix = Suffisso
 integration-citationDialog-details-prefix = Prefisso
 integration-citationDialog-details-suppressAuthor = Ometti l'autore
+integration-citationDialog-details-locator-info = Suggerimento: Puoi anche digitare i numeri di pagina e altri indicatori di posizione nel campo principale. <a data-l10n-name="docs-link">Scopri di più</a>
 integration-citationDialog-details-includeComments = Includi i commenti
 integration-citationDialog-details-remove = { general-remove }
 integration-citationDialog-details-done =
@@ -45,8 +46,8 @@ integration-citationDialog-lib-message-citation =
     }
 integration-citationDialog-lib-message-add-note =
     { $search ->
-        [true] Nessuna tra le note selezionate corrisponde ai criteri di ricerca
-       *[other] Nessuna nota selezionata
+        [true] Nessuna tra le note selezionate o aperte corrisponde ai criteri di ricerca
+       *[other] Nessuna nota selezionata o aperta
     }
 integration-citationDialog-lib-message-annotations =
     { $search ->
@@ -54,6 +55,9 @@ integration-citationDialog-lib-message-annotations =
        *[other] Nessun elemento con annotazioni selezionato o aperto
     }
 integration-citationDialog-settings-keepSorted = Mantieni l'ordinamento delle fonti
+integration-citationDialog-preview-error = Anteprima non disponibile
+integration-citationDialog-btn-displayPreview =
+    .title = Mostra anteprima della citazione
 integration-citationDialog-btn-settings =
     .title = { general-open-settings }
 integration-citationDialog-mode-library = Biblioteca
@@ -76,6 +80,11 @@ integration-citationDialog-aria-bubble =
 integration-citationDialog-single-input-citation =
     .placeholder = { integration-citationDialog-search-for-items }
     .aria-description = Premi Tab per selezionare gli elementi da aggiungere a questa citazione. Premi Esc per scartare le modifiche e chiudere la finestra
+integration-citationDialog-just-added-input-placeholder = Digita “10-15” per citare delle pagine o cercare elementi
+integration-citationDialog-just-added-input-citation =
+    .placeholder = { $placeholder }
+    .title = { $title }
+    .aria-description = { integration-citationDialog-general-instructions }
 integration-citationDialog-input-citation =
     .placeholder = { integration-citationDialog-search-for-items }
     .aria-description = { integration-citationDialog-general-instructions }
@@ -91,9 +100,17 @@ integration-citationDialog-collections-table =
     .aria-label = Collezioni.
     .aria-description = Seleziona una collezione e premi Tab per navigare tra i suoi elementi.
 integration-citationDialog-items-table =
+    .title = { integration-citationDialog-add-to-citation-tooltip }
     .aria-label = { integration-citationDialog-enter-to-add-item }
 integration-citationDialog-items-table-added =
+    .title = { integration-citationDialog-add-to-citation-tooltip }
     .aria-label = Questo elemento è stato aggiunto alla citazione. Premi { return-or-enter } per  aggiungerlo di nuovo o  { delete-or-backspace } per rimuoverlo.
+integration-citationDialog-add-to-citation-tooltip =
+    { $count ->
+        [one] Aggiungi alla citazione
+        [many] Aggiungi { $count } elementi alla citazione
+       *[other] Aggiungi { $count } elementi alla citazione
+    }
 integration-citationDialog-add-all = Aggiungi tutti
 integration-citationDialog-collapse-section =
     .title = Comprimi sezione
@@ -131,8 +148,6 @@ integration-warning-documentPreferences-changes-will-be-lost = Se continui le mo
 integration-warning-discard-changes = Scarta modifiche
 integration-warning-command-is-running = Un comando dell'estensione del word processor è già in esecuzione
 first-run-guidance-citationDialog =
-    Digita un titolo, un autore e/o un anno per cercare un riferimento.
+    Fai clic sulla bolla o usa i tasti Freccia sinistra (←) e Freccia giù (↓) per visualizzare i dettagli della citazione e personalizzare opzioni come il numero di pagina, il prefisso e il suffisso. 
     
-    Dopo aver scelto il riferimento desiderato, clicca sulla bolla o selezionala con la tastiere quindi premi ↓/Spazio per mostrare le opzioni di citazione come il numero di pagina, prefisso e suffisso.
-    
-    È anche possibile aggiungere il numero di pagina o un altro locatore  includendolo tra i termini di ricerca (es. “storia { $locator }”) o digitandolo dopo la bolla e premendo { return-or-enter }.
+    Puoi anche aggiungere un numero di pagina o un altro indicatore di posizione includendolo nei termini di ricerca (es. “storia { $locator }”) oppure digitandolo dopo la bolla e premendo { return-or-enter }.

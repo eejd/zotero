@@ -32,6 +32,7 @@ integration-citationDialog-section-cited =
 integration-citationDialog-details-suffix = Суффикс
 integration-citationDialog-details-prefix = Префикс
 integration-citationDialog-details-suppressAuthor = Не выводить автора
+integration-citationDialog-details-locator-info = Совет: Вы также можете ввести номера страниц и другие указатели непосредственно в основное поле. <a data-l10n-name="docs-link">Узнать больше</a>
 integration-citationDialog-details-includeComments = Добавить комментарии
 integration-citationDialog-details-remove = { general-remove }
 integration-citationDialog-details-done =
@@ -45,14 +46,17 @@ integration-citationDialog-lib-message-citation =
     }
 integration-citationDialog-lib-message-add-note =
     { $search ->
-        [true] Ни одна выбранная заметка не соответствует текущему поиску.
-       *[other] Заметки не выбраны
+        [true] Ни одна выбранная или открытая заметка не соответствует текущему поиску
+       *[other] Нет выбранных или открытых заметок
     }
 integration-citationDialog-lib-message-annotations =
     { $search ->
        *[true] Нет элементов с аннотациями, которые совпадают с текущим поиском
     }
 integration-citationDialog-settings-keepSorted = Удерживать источники отсортированными
+integration-citationDialog-preview-error = Предварительный просмотр недоступен
+integration-citationDialog-btn-displayPreview =
+    .title = Отобразить предварительный просмотр цитирования
 integration-citationDialog-btn-settings =
     .title = { general-open-settings }
 integration-citationDialog-mode-library = Библиотека
@@ -75,6 +79,11 @@ integration-citationDialog-aria-bubble =
 integration-citationDialog-single-input-citation =
     .placeholder = { integration-citationDialog-search-for-items }
     .aria-description = Нажмите Tab для выбора записей, которые будут добавлены к цитированию. Нажмите Escape, чтобы отменить изменения и закрыть диалог.
+integration-citationDialog-just-added-input-placeholder = Введите “10-15”, чтобы цитировать страницы или искать элементы
+integration-citationDialog-just-added-input-citation =
+    .placeholder = { $placeholder }
+    .title = { $title }
+    .aria-description = { integration-citationDialog-general-instructions }
 integration-citationDialog-input-citation =
     .placeholder = { integration-citationDialog-search-for-items }
     .aria-description = { integration-citationDialog-general-instructions }
@@ -90,9 +99,18 @@ integration-citationDialog-collections-table =
     .aria-label = Коллекции.
     .aria-description = Выберите коллекцию и нажмите Tab для навигации по её записям.
 integration-citationDialog-items-table =
+    .title = { integration-citationDialog-add-to-citation-tooltip }
     .aria-label = { integration-citationDialog-enter-to-add-item }
 integration-citationDialog-items-table-added =
+    .title = { integration-citationDialog-add-to-citation-tooltip }
     .aria-label = Этот элемент был добавлен в цитату. Нажмите { return-or-enter }, чтобы добавить его снова, или { delete-or-backspace }, чтобы удалить его.
+integration-citationDialog-add-to-citation-tooltip =
+    { $count ->
+        [one] Добавить в Цитирование
+        [few] Добавить { $count } Элементов в Цитирование
+        [many] Добавить { $count } Элементов в Цитирование
+       *[other] Добавить { $count } Элементов в Цитирование
+    }
 integration-citationDialog-add-all = Добавить все
 integration-citationDialog-collapse-section =
     .title = Свернуть секцию
@@ -116,7 +134,7 @@ integration-prefs-bookmarks-formatNotice =
     }
 integration-prefs-automaticCitationUpdates =
     .label = Авто-обновлять Цитаты
-    .tooltip = Цитаты, ожидающие обновления, будут выделены в документе
+    .tooltip = Цитаты, ожидающие обновления, будут цветовыделены в документе
 integration-prefs-automaticCitationUpdates-description = Отключите обновление библиографии, это ускорит вставку цитат в большие документы. Нажимайте «Обновить», чтобы обновить цитаты вручную.
 integration-prefs-automaticJournalAbbeviations =
     .label = Исп-ть MEDLINE аббревиатуры
@@ -130,8 +148,6 @@ integration-warning-documentPreferences-changes-will-be-lost = Вы внесли
 integration-warning-discard-changes = Отменить изменения
 integration-warning-command-is-running = Команда интеграции Текстового Процессора уже запущена.
 first-run-guidance-citationDialog =
-    Введите название, автора и/или год для поиска отсылки.
+    Щёлкните пузырёк или используйте клавиши ← и ↓, чтобы просмотреть сведения о цитировании и настроить такие параметры, как номер страницы, префикс и суффикс.
     
-    Чтобы выбрать запись, нажмите на неё или выберите с помощью клавиатуры и нажмите ↓/Space, чтобы показать опции цитирования, такие как номер страницы, префикс и суффикс.
-    
-    Также, вы можете добавить номер страницы или другой локатор, включив его в ваш поисковый запрос (напр., “история { $locator }”) или введя его после выбора записи, нажав { return-or-enter }.
+    Вы также можете добавить номер страницы или другой указатель, включив его в условия поиска (например, “history { $locator }”) или набрав его после пузырька и нажав { return-or-enter }.

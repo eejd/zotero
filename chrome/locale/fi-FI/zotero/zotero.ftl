@@ -24,6 +24,12 @@ delete-or-backspace =
         [macos] Palauta
        *[other] Syötä
     }
+-os-name =
+    { PLATFORM() ->
+        [macos] macOS
+        [windows] Windows
+       *[other] Linux
+    }
 general-print = Tulosta
 general-remove = Poista
 general-add = Lisää
@@ -40,12 +46,17 @@ general-view-troubleshooting-instructions = Katso vianhakuohjeet
 general-go-back = Siirry takaisinpäin
 general-accept = Hyväksy
 general-cancel = Peruuta
+cancel-button =
+    .label = { general-cancel }
 general-show-in-library = Näytä kirjastossa
 general-restartApp = Uudelleenkäynnistä { -app-name }
 general-restartInTroubleshootingMode = Käynnistä uudelleen virheenjäljitystilassa
 general-save = Tallenna
 general-clear = Tyhjennä
+clear-button =
+    .label = { general-clear }
 general-update = Päivitä
+general-reset-to-default = Reset to Default
 general-back = Takaisin
 general-edit = Muokkaa
 general-cut = Leikkaa
@@ -63,6 +74,9 @@ general-more-information = Lisätietoja
 general-warning = Varoitus
 general-type-to-continue = Kirjoita “{ $text }” jatkaaksesi.
 general-continue = Jatka
+general-allow = Allow
+general-always-allow = Always Allow
+general-deny = Deny
 general-red = Punainen
 general-orange = Oranssi
 general-yellow = Keltainen
@@ -76,6 +90,8 @@ general-maroon = Kastanjanruskea
 general-gray = Harmaa
 general-black = Musta
 general-loading = Ladataan...
+db-checking-integrity = Checking database integrity…
+db-repairing = Repairing database…
 citation-style-label = Viittaustyyli:
 language-label = Kieli:
 menu-custom-group-submenu =
@@ -162,14 +178,114 @@ collections-menu-show-recently-read =
     .label = Näytä { recently-read }
 item-menu-remove-from-recently-read =
     .label = Poista listalta { recently-read }…
-collections-menu-rename-collection =
-    .label = Nimeä kokoelma uudelleen
-collections-menu-edit-saved-search =
-    .label = Muokkaa tallennettua hakua
+collections-menu-clear-all-last-read =
+    .label = Clear All Last Read Dates…
+recently-read-clear-all-confirm = All Last Read dates in this library will be erased.
+items-list-load-error-plugin = Error loading items list. Disabling the “{ $plugin }” plugin and restarting { -app-name } may fix this.
+items-section-collections-selected =
+    { $count ->
+        [one] { $count } kokoelma valittu
+       *[other] { $count } kokoelmaa valittu
+    }
+items-section-searches-selected =
+    { $count ->
+        [one] { $count } saved search selected
+       *[other] { $count } saved searches selected
+    }
+items-section-sources-selected =
+    { $count ->
+        [one] { $count } source selected
+       *[other] { $count } sources selected
+    }
+items-section-library-collections =
+    { $count ->
+        [one] { $library } ({ $count } collection selected)
+       *[other] { $library } ({ $count } collections selected)
+    }
+items-section-library-searches =
+    { $count ->
+        [one] { $library } ({ $count } saved search selected)
+       *[other] { $library } ({ $count } saved searches selected)
+    }
+items-section-library-sources =
+    { $count ->
+        [one] { $library } ({ $count } source selected)
+       *[other] { $library } ({ $count } sources selected)
+    }
+items-section-library-recently-read = { $library } ({ recently-read })
+items-section-library = { $library }
+collections-menu-rename =
+    .label = Rename
+edit-saved-search = Muokkaa tallennettua hakua
+collections-menu-edit-search =
+    .label = Edit Search
+collections-menu-duplicate-search =
+    .label = Duplicate Search
 collections-menu-move-collection =
     .label = Siirrä kohteeseen
 collections-menu-copy-collection =
     .label = Kopioi kohteeseen
+collections-menu-export =
+    .label = Vie...
+collections-menu-generate-report =
+    .label = Generate Report…
+collections-menu-create-bibliography =
+    .label = Create Bibliography…
+collections-menu-unsubscribe =
+    .label = Unsubscribe…
+collections-menu-delete =
+    .label =
+        { $count ->
+            [one] Delete Collection…
+           *[other] Delete Collections…
+        }
+collections-menu-delete-with-items =
+    .label =
+        { $count ->
+            [one] Delete Collection and Items…
+           *[other] Delete Collections and Items…
+        }
+collections-menu-delete-search =
+    .label =
+        { $count ->
+            [one] Delete Search…
+           *[other] Delete Searches…
+        }
+collections-delete-title =
+    { $count ->
+        [one] Delete Collection
+       *[other] Delete Collections
+    }
+collections-delete-message =
+    { $count ->
+        [one] Are you sure you want to delete this collection?
+       *[other] Are you sure you want to delete { $count } collections?
+    }
+collections-delete-keep-items =
+    { $count ->
+        [one] Items within this collection will not be deleted.
+       *[other] Items within these collections will not be deleted.
+    }
+collections-delete-with-items-title =
+    { $count ->
+        [one] Delete Collection and Items
+       *[other] Delete Collections and Items
+    }
+collections-delete-with-items-message =
+    { $count ->
+        [one] Are you sure you want to delete this collection and move all items within it to the Trash?
+       *[other] Are you sure you want to delete { $count } collections and move all items within them to the Trash?
+    }
+collections-delete-search-title =
+    { $count ->
+        [one] Delete Search
+       *[other] Delete Searches
+    }
+collections-delete-search-message =
+    { $count ->
+        [one] Are you sure you want to delete this search?
+       *[other] Are you sure you want to delete { $count } searches?
+    }
 item-creator-moveDown =
     .label = Siirrä alas
 item-creator-moveToTop =
@@ -216,6 +332,7 @@ item-menu-option-view-online =
 item-button-view-online =
     .tooltiptext = { view-online }
 file-renaming-file-renamed-to = Tiedoston uusi nimi on nyt { $filename }
+file-access-error-fs-corrupted = { -os-name } reported that the file or disk is corrupted. Run a disk check on the drive containing the file.
 itembox-button-options =
     .tooltiptext = Avaa kontekstivalikko
 itembox-button-merge =
@@ -271,7 +388,9 @@ file-interface-items-were-relinked =
         [one] Yksi nimike uudelleenlinkitettiin
        *[other] { $numRelinked } nimikettä uudelleenlinkitettiin
     }
-import-mendeley-encrypted = Valittua Mendeley-tietokantaa ei voitu lukea, todennäköisin syy on, että se on salattu. Katso lisätietoa ohjeesta <a data-l10n-name="mendeley-import-kb">How do I import a Mendeley library into Zotero?</a> .
+import-mendeley-cannot-decrypt = The selected Mendeley database could not be decrypted. This can happen if the database file has been renamed. See <a data-l10n-name="mendeley-import-kb">How do I import a Mendeley library into Zotero?</a> for more information.
+import-mendeley-unsupported = The selected file does not appear to be a Mendeley database. See <a data-l10n-name="mendeley-import-kb">How do I import a Mendeley library into Zotero?</a> for more information.
+import-mendeley-db-in-use = The selected Mendeley database is in use. Please quit Mendeley Desktop and try again.
 file-interface-import-error-translator = Tapahtui virhe tuotaessa tiedostoa “{ $translator }”lla. Varmista että tiedosto on kelvollinen ja yritä uudelleen.
 import-online-intro = Seuraavassa vaiheessa sinua pyydetään kirjautumaan sisään sovellukseen { $targetAppOnline } ja antamaan { -app-name }lle pääsyoikeudet. Tämä on välttämätöntä, jotta { $targetApp }n kirjasto voidaan tuoda { -app-name }-sovellukseen.
 import-online-intro2 = { -app-name } ei koskaan näe eikä tallenna { $targetApp } salasanaasi.
@@ -282,6 +401,7 @@ import-online-relink-only =
     .label = Linkitä uudelleen Mendeley Desktopin viittaukset
 import-online-relink-kb = { general-more-information }
 import-online-connection-error = { -app-name } ei saanut yhteyttä sovellukseen { $targetApp }. Tarkista internet-yhteytesi ja yritä uudelleen.
+tab-title-multiple-collections = Multiple
 items-table-cell-notes =
     .aria-label =
         { $count ->
@@ -366,6 +486,7 @@ styleEditor-editor =
     .aria-label = Tyylieditori
 styleEditor-preview =
     .aria-label = Esikatselu
+stylePreview-generating = Generating previews…
 publications-intro-page = Omat julkaisuni
 publications-intro = Omat julkaisuni -kokoelmaan lisätyt nimikkeet näkyvät profiilisivullasi zotero.org:ssa. Jos päätät sisällyttää liitetiedostot, ne julkaistaan sivulla määrittelemälläsi lisenssillä. Lisää vain julkaisuja jotka olet itse tehnyt ja sisällytä vain tiedostot, joiden levittämiseen sinulla on oikeudet ja joita haluat levittää.
 publications-include-checkbox-files =
@@ -621,6 +742,18 @@ quicksearch-input =
     .aria-label = Pikahaku
     .placeholder = { $placeholder }
     .aria-description = { $placeholder }
+advanced-search = Tarkennettu haku
+menuitem-advanced-search =
+    .label = { advanced-search }
+quicksearch-advanced-search-button =
+    .tooltiptext = { advanced-search }
+    .aria-label = { advanced-search }
+advanced-search-close =
+    .tooltiptext = Close Advanced Search
+advanced-search-expand =
+    .tooltiptext = Expand Advanced Search
+advanced-search-collapse =
+    .tooltiptext = Collapse Advanced Search
 item-pane-header-view-as =
     .label = Näytä muodossa
 item-pane-header-none =
@@ -680,9 +813,64 @@ architecture-x64-on-arm64-action = Lataa { -app-name } ARM64-prosessorille
 first-run-guidance-authorMenu = { -app-name } antaa sinun määritellä myös toimittajat ja kääntäjät. Voit tehdä kirjoittajasta toimittajan tai kääntäjän tästä valikosta.
 first-run-guidance-readAloud = { -app-name } osaa nyt lukea asiakirjasi ääneen luonnolliselta kuulostavalla äänellä.
 advanced-search-remove-btn =
-    .tooltiptext = { general-remove }
+    .tooltiptext = Remove Condition
 advanced-search-add-btn =
-    .tooltiptext = { general-add }
+    .tooltiptext = Add Condition
+advanced-search-group-btn =
+    .tooltiptext = Add Condition Group
+advanced-search-remove-group-btn =
+    .tooltiptext = Remove Group
+advanced-search-ungroup-btn =
+    .tooltiptext = Ungroup Conditions
+advanced-search-result-level-menu =
+    .aria-label = Result type
+advanced-search-result-level-prefix-root =
+    .value = Etsi
+advanced-search-join-prefix-root =
+    .value = matching
+advanced-search-result-level-any =
+    .label = any items
+advanced-search-result-level-item =
+    .label = top-level items
+advanced-search-result-level-attachment =
+    .label = attachments
+advanced-search-result-level-note =
+    .label = notes
+advanced-search-result-level-annotation =
+    .label = huomautukset
+advanced-search-binding-menu =
+    .aria-label = Match against the same item
+advanced-search-binding-separate =
+    .label = separately
+advanced-search-binding-same-attachment =
+    .label = in the same attachment
+advanced-search-binding-same-note =
+    .label = in the same note
+advanced-search-binding-same-annotation =
+    .label = in the same annotation
+advanced-search-of-the-following =
+    .value = of the following
+advanced-search-binding-hint-attachment =
+    .value = These conditions can match separate attachments.
+advanced-search-binding-hint-note =
+    .value = These conditions can match separate notes.
+advanced-search-binding-hint-annotation =
+    .value = These conditions can match separate annotations.
+advanced-search-level-warning-mixed = These conditions cannot all match the same item, so this search will never return results. Try matching “{ $matchAny }” of them, or set the result type to “{ $topLevelItems }”.
+advanced-search-level-warning-unreachable = This search has a condition that cannot apply to the chosen result type. Set the result type to “{ $topLevelItems }” or remove the incompatible condition.
+advanced-search-group-warning-unreachable =
+    A condition here cannot be in the same { $entity ->
+        [attachment] attachment
+        [note] note
+       *[annotation] annotation
+    }. Match these separately or remove the incompatible condition.
+advanced-search-group-warning-mixed = These conditions cannot all match the same item, so this group will never match. Try matching “{ $matchAny }” of them, or set the result type to “{ $topLevelItems }”.
+advanced-search-bind-same-attachment =
+    .label = Match the same attachment
+advanced-search-bind-same-note =
+    .label = Match the same note
+advanced-search-bind-same-annotation =
+    .label = Match the same annotation
 advanced-search-conditions-menu =
     .aria-label = Hakuehto
     .label = { $label }
@@ -692,11 +880,46 @@ advanced-search-operators-menu =
 advanced-search-condition-input =
     .aria-label = Arvo
     .label = { $label }
+search-operator-isEmpty = is empty
+search-operator-isNotEmpty = is not empty
 search-conditions-tooltip-fields = Kentät:
 search-conditions-collection = Kokoelma
 search-conditions-savedSearch = Tallennettu haku
 search-conditions-itemTypeID = Nimikkeen tyyppi
+search-query-keyword-creator = by
+search-query-keyword-publication = in, publication, journal
+search-query-keyword-item-type = type
+search-query-keyword-language = lang
+search-query-keyword-abstract = abstract
+search-query-keyword-fulltext = fulltext, text
+search-query-keyword-date = year
+search-query-keyword-date-before = before
+search-query-keyword-date-after = after, since
+search-query-keyword-date-added = added
+search-query-keyword-date-modified = modified
+search-query-keyword-no-annotations = no annotations
+search-query-keyword-has-annotations = has annotations
+search-query-keyword-no-notes = no notes
+search-query-keyword-has-notes = has notes
+search-query-keyword-no-tags = no tags
+search-query-keyword-has-tags = has tags
+search-query-keyword-no-attachments = no attachments
+search-query-keyword-has-attachments = has attachments
+search-query-keyword-and = and
+search-query-keyword-or = or
+search-query-keyword-no = no
+search-query-keyword-has = has
+search-query-keyword-days = day, days
+search-query-keyword-weeks = week, weeks
+search-query-keyword-months = month, months
+search-query-keyword-years = year, years
+search-query-keyword-range = between 2020 and 2025, from 2020 to 2025, 2020 to 2025
+search-query-keyword-range-excluded = not between 2020 and 2025
 search-conditions-tag = Merkki
+search-conditions-numTags = # of Tags
+search-conditions-numNotes = # of Notes
+search-conditions-numAttachments = # of Attachments
+search-conditions-numAnnotations = # of Annotations
 search-conditions-note = Muistiinpano
 search-conditions-childNote = Alimuistiinpano
 search-conditions-creator = Tekijä
@@ -715,10 +938,26 @@ search-conditions-dateModified = Muokattu
 search-conditions-fulltextContent = Liitteen sisältö
 search-conditions-programmingLanguage = Ohjelmointikieli
 search-conditions-fileTypeID = Liitetiedoston tyyppi
+search-conditions-attachmentStorageType = Attachment Storage Type
 search-conditions-lastRead = Viimeksi luettu liite
 search-conditions-annotationText = Huomautusteksti
 search-conditions-annotationComment = Huomautuskommentti
+search-conditions-annotationType = Annotation Type
+search-conditions-annotationColor = Annotation Color
+search-conditions-annotationAuthor = Annotation Author
 search-conditions-anyField = Mikä tahansa kenttä
+search-conditions-titleCreatorYear = Otsikko, kirjoittaja, vuosi
+search-conditions-submenu-attachment = Liite
+search-conditions-submenu-annotation = Huomautus
+search-conditions-short-fulltextContent = Content
+search-conditions-short-fileTypeID = Tiedostomuoto
+search-conditions-short-attachmentStorageType = Storage Type
+search-conditions-short-lastRead = Viimeksi luettu
+search-conditions-short-annotationText = Text
+search-conditions-short-annotationComment = Comment
+search-conditions-short-annotationType = Tyyppi
+search-conditions-short-annotationColor = Color
+search-conditions-short-annotationAuthor = Tekijä
 find-pdf-files-added =
     { $count ->
         [one] { $count } tiedosto lisätty
@@ -750,6 +989,9 @@ file-type-video = Video
 file-type-presentation = Esitelmä
 file-type-document = Asiakirja
 file-type-ebook = E-kirja
+attachment-storage-type-storedFile = Stored File
+attachment-storage-type-linkedFile = Linkitetty tiedosto
+attachment-storage-type-webLink = Verkko-osoite
 post-upgrade-message = Olet päivittänyt versioon <span data-l10n-name="post-upgrade-appver">{ -app-name } { $version }</span>! Tutustu <a data-l10n-name="new-features-link">uusiin ominaisuuksiin </a>.
 post-upgrade-remind-me-later =
     .label = { general-remind-me-later }
@@ -758,18 +1000,25 @@ post-upgrade-done =
 text-action-paste-and-search =
     .label = Liitä ja etsi
 mac-word-plugin-install-message = Zotero vaatii pääsyn Wordin tietoihin jotta lisäosa voidaan asentaa
+mac-word-plugin-install-folder-message = { -app-name } needs access to Word’s startup folder to install the Word plugin.
 mac-word-plugin-install-action-button =
     .label = Asenna Word-lisäosa
 mac-word-plugin-install-remind-later-button =
     .label = { general-remind-me-later }
 mac-word-plugin-install-dont-ask-again-button =
     .label = { general-dont-ask-again }
+mac-word-plugin-install-folder-dialog-title = Install the plugin in the Word startup folder
+mac-word-plugin-install-folder-dialog-button = Asenna
+mac-word-plugin-install-wrong-folder-selected = The suggested folder must be selected. Please try again without choosing a different folder.
 file-renaming-banner-message = { -app-name } pitää nyt automaattisesti tiedostonnimet ajan tasalla kun teet muutoksia nimikkeisiin.
 file-renaming-banner-documentation-link = { general-learn-more }
 file-renaming-banner-settings-link = { general-settings }
 connector-version-warning = { -app-name } Connector jotta se toimii tämän { -app-name }n version kanssa.
 userjs-pref-warning = Jotkus { -app-name }n asetukset on ohitettu käyttämällä ei-tuettua menetelmää. { -app-name } palauttaa ne ja käynnistyy uudelleen.
+migrate-extra-fields-progress-headline = Updating Items…
 migrate-extra-fields-progress-message = Uusien kenttien tuominen Ylim. -kentästä
+fulltext-indexing-progress-title = Indexing
+fulltext-indexing-progress-message = Full-text search results may be incomplete until indexing finishes.
 long-tag-fixer-window-title =
     .title = Jaa avainsanat
 long-tag-fixer-button-dont-split =
@@ -788,3 +1037,158 @@ banner-close-button =
 plugins-blocked-plugin =
     .message = { -app-name } on kytkenyt tämän lisäosan pois päältä.
 data-dir-unsupported-storage = This can happen if the { -app-name } data directory is in a cloud storage folder (OneDrive, Dropbox, etc.) or on a network share.
+data-dir-check-parent-write-access = Make sure you have write access to { $path } and that security software isn’t preventing { -app-name } from writing to the disk.
+login-manager-reset = { -app-name } was unable to read your saved login information, so it has been reset. Please log in again in the { preferences-pane-account } pane of the { -app-name } settings.
+login-manager-open-profile-directory = Open Profile Directory
+os-keystore-save-failed =
+    { PLATFORM() ->
+        [macos] { -app-name } couldn’t access the { -os-name } Keychain to securely save your credentials. Make sure your Keychain is accessible and try again.
+        [windows] { -app-name } couldn’t use { -os-name } Credential Manager to securely save your credentials. Try again or restart { -app-name }.
+       *[other] { -app-name } couldn’t access your { -os-name } keyring to securely save your credentials. Make sure a keyring service such as GNOME Keyring or KWallet is running and try again.
+    }
+os-keystore-read-failed =
+    { PLATFORM() ->
+        [macos] { -app-name } couldn’t access the { -os-name } Keychain to read your saved credentials. Make sure your Keychain is accessible and try again.
+        [windows] { -app-name } couldn’t use { -os-name } Credential Manager to read your saved credentials. Try again or restart { -app-name }.
+       *[other] { -app-name } couldn’t access your { -os-name } keyring to read your saved credentials. Make sure a keyring service such as GNOME Keyring or KWallet is running and try again.
+    }
+os-keystore-read-unrecoverable =
+    { PLATFORM() ->
+        [macos] { -app-name } couldn’t read your saved credentials from the { -os-name } Keychain.
+        [windows] { -app-name } couldn’t read your saved credentials from { -os-name } Credential Manager.
+       *[other] { -app-name } couldn’t read your saved credentials from your { -os-name } keyring.
+    } You’ll need to set up syncing again in the { -app-name } settings.
+os-keystore-save-unencrypted = { -app-name } can save your credentials unencrypted instead. Anyone with access to your { -app-name } profile folder would then be able to read them.
+os-keystore-save-unencrypted-button = Save Anyway
+os-keystore-migrate-failed =
+    { PLATFORM() ->
+        [macos] { -app-name } couldn’t access the { -os-name } Keychain to encrypt your stored credentials. Your credentials remain stored unencrypted on disk. Make sure your Keychain is accessible and restart { -app-name }.
+        [windows] { -app-name } couldn’t encrypt your stored credentials. Your credentials remain stored unencrypted on disk. Restart { -app-name } and try again.
+       *[other] { -app-name } couldn’t access your { -os-name } keyring to encrypt your stored credentials. Your credentials remain stored unencrypted on disk. Make sure a keyring service such as GNOME Keyring or KWallet is running and restart { -app-name }.
+    }
+search-button =
+    .label = Haku
+save-search-new-button =
+    .label = Save Search…
+save-search-edit-button =
+    .label = Tallenna
+save-search-name-title = Tallenna haku
+save-search-name-message = Enter a name for the saved search:
+saved-search-close-confirmation-title = Editing Saved Search
+saved-search-close-confirmation-body = Do you want to save changes you made to this saved search?
+item-pane-batch-editing-prompt =
+    .aria-label = Batch editing
+item-pane-batch-editing-enable =
+    .label = Edit Multiple Items…
+item-pane-batch-editing-multiple-values-placeholder = Multiple
+item-pane-batch-editing-clear-values = Clear all values
+item-pane-batch-editing-header =
+    { $count ->
+        [one] Editing { $count } item
+       *[other] Editing { $count } items
+    }
+item-pane-batch-editing-done =
+    .label = { general-done }
+undo-action-edit-metadata =
+    { $count ->
+        [one] Edit Metadata
+       *[other] Edit Metadata for { $count } Items
+    }
+undo-action-edit-field =
+    { $count ->
+        [one] Edit of “{ $field }”
+       *[other] Edit of “{ $field }” for { $count } Items
+    }
+undo-action-normalize-attachment-titles = Normalize Attachment Title
+undo-action-trash =
+    { $count ->
+        [one] Trash Item
+       *[other] Trash { $count } Items
+    }
+undo-action-restore-items =
+    { $count ->
+        [one] Restore Item
+       *[other] Restore { $count } Items
+    }
+undo-action-trash-collection =
+    { $count ->
+        [one] Trash Collection
+       *[other] Trash { $count } Collections
+    }
+undo-action-trash-search =
+    { $count ->
+        [one] Trash Saved Search
+       *[other] Trash { $count } Saved Searches
+    }
+undo-action-restore-collection =
+    { $count ->
+        [one] Restore Collection
+       *[other] Restore { $count } Collections
+    }
+undo-action-restore-objects =
+    { $count ->
+        [one] Restore Object
+       *[other] Restore { $count } Objects
+    }
+undo-action-add-to-collection =
+    { $count ->
+        [one] Add to Collection
+       *[other] Add { $count } Items to Collection
+    }
+undo-action-remove-from-collection =
+    { $count ->
+        [one] Remove from Collection
+       *[other] Remove { $count } Items from Collection
+    }
+undo-action-move-to-collection =
+    { $count ->
+        [one] Move to Collection
+       *[other] Move { $count } Items to Collection
+    }
+undo-action-rename-collection = Nimeä kokoelma uudelleen
+undo-action-move-collection = Move Collection
+undo-action-add-tag =
+    { $count ->
+        [one] Add Tag
+       *[other] Add Tag to { $count } Items
+    }
+undo-action-change-tag = Change Tag
+undo-action-split-tag = Split Tag
+undo-action-remove-tag =
+    { $count ->
+        [one] Remove Tag
+       *[other] Remove Tag from { $count } Items
+    }
+undo-action-remove-tags-from-item =
+    { $count ->
+        [one] Remove Tag
+       *[other] Remove { $count } Tags
+    }
+undo-action-remove-all-tags = Remove All Tags
+undo-action-edit-note = Muokkaa muistiinpanoa
+undo-action-add-creator = Add Creator
+undo-action-remove-creator = Remove Creator
+undo-action-edit-creator = Edit Creator
+undo-action-reorder-creator = Reorder Creator
+undo-action-change-type = Vaihda kohteen tyyppi
+undo-action-change-parent-item =
+    { $count ->
+        [one] Change Parent Item
+       *[other] Change Parent for { $count } Items
+    }
+undo-action-convert-to-standalone =
+    { $count ->
+        [one] Convert to Standalone
+       *[other] Convert { $count } Items to Standalone
+    }
+undo-action-add-related = Add Related
+undo-action-remove-related = Remove Related
+undo-action-merge-items =
+    { $count ->
+        [one] Merge Item
+       *[other] Merge { $count } Items
+    }
+menu-edit-undo-action = Undo { $action }
+menu-edit-redo-action = Redo { $action }
+local-api-authorize-title = Local API Authorization
+local-api-authorize-text = “{ $appName }”, an application running on your computer, wants to modify your { -app-name } library.

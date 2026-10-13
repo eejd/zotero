@@ -252,6 +252,91 @@ describe("Zotero.HTTP", function () {
 				assert.isTrue(delayStub.notCalled);
 			});
 			
+			it("shouldn't obey a Retry-After longer than errorDelayMax", async function () {
+				var called = 0;
+				server.respond(function (req) {
+					if (req.method == "GET" && req.url == baseURL + "error") {
+						if (called < 1) {
+							req.respond(503, { "Retry-After": "3600" }, "");
+						}
+						else {
+							req.respond(200, {}, "");
+						}
+					}
+					called++;
+				});
+				spy = sinon.spy(Zotero.HTTP, "_requestInternal");
+				var e = await getPromiseError(
+					Zotero.HTTP.request("GET", baseURL + "error", { errorDelayMax: 7500 })
+				);
+				assert.instanceOf(e, Zotero.HTTP.UnexpectedStatusException);
+				assert.isTrue(spy.calledOnce);
+				assert.isTrue(delayStub.notCalled);
+			});
+			
+			it("should stop obeying Retry-After once errorDelayMax is used up", async function () {
+				server.respond(function (req) {
+					if (req.method == "GET" && req.url == baseURL + "error") {
+						req.respond(429, { "Retry-After": "3" }, "");
+					}
+				});
+				spy = sinon.spy(Zotero.HTTP, "_requestInternal");
+				var e = await getPromiseError(
+					Zotero.HTTP.request("GET", baseURL + "error", { errorDelayMax: 7500 })
+				);
+				assert.instanceOf(e, Zotero.HTTP.UnexpectedStatusException);
+				// 3s + 3s fits within 7.5s; a third would not
+				assert.equal(spy.callCount, 3);
+				assert.isTrue(delayStub.calledTwice);
+				assert.equal(delayStub.args[0][0], 3000);
+				assert.equal(delayStub.args[1][0], 3000);
+			});
+			
+			it("should wait at least a second for a Retry-After of 0", async function () {
+				server.respond(function (req) {
+					if (req.method == "GET" && req.url == baseURL + "error") {
+						req.respond(429, { "Retry-After": "0" }, "");
+					}
+				});
+				spy = sinon.spy(Zotero.HTTP, "_requestInternal");
+				var e = await getPromiseError(
+					Zotero.HTTP.request("GET", baseURL + "error", { errorDelayMax: 2500 })
+				);
+				assert.instanceOf(e, Zotero.HTTP.UnexpectedStatusException);
+				assert.equal(spy.callCount, 3);
+				assert.deepEqual(delayStub.args.map(x => x[0]), [1000, 1000]);
+			});
+			
+			it("should count Retry-After and backoff delays against the same errorDelayMax", async function () {
+				var called = 0;
+				server.respond(function (req) {
+					if (req.method == "GET" && req.url == baseURL + "error") {
+						if (called < 2) {
+							req.respond(500, {}, "");
+						}
+						else {
+							req.respond(429, { "Retry-After": "3" }, "");
+						}
+					}
+					called++;
+				});
+				spy = sinon.spy(Zotero.HTTP, "_requestInternal");
+				var e = await getPromiseError(
+					Zotero.HTTP.request(
+						"GET",
+						baseURL + "error",
+						{
+							errorDelayIntervals: [2500, 5000],
+							errorDelayMax: 7500
+						}
+					)
+				);
+				assert.instanceOf(e, Zotero.HTTP.UnexpectedStatusException);
+				// 2.5s + 5s uses up the budget, so the Retry-After isn't honored
+				assert.equal(spy.callCount, 3);
+				assert.deepEqual(delayStub.args.map(x => x[0]), [2500, 5000]);
+			});
+			
 			it("should provide cancellerReceiver a callback to cancel while waiting to retry a 5xx error", async function () {
 				delayStub.restore();
 				setResponse({
@@ -343,7 +428,7 @@ describe("Zotero.HTTP", function () {
 					called++;
 				});
 				spy = sinon.spy(Zotero.HTTP, "_requestInternal");
-				await Zotero.HTTP.request("GET", baseURL + "error");
+				await Zotero.HTTP.request("GET", baseURL + "error", { errorDelayMax: 20000 });
 				assert.equal(3, spy.callCount);
 				// DEBUG: Why are these slightly off?
 				assert.approximately(delayStub.args[0][0], 5 * 1000, 5);
@@ -451,18 +536,33 @@ describe("Zotero.HTTP", function () {
 				}
 			);
 			httpd.registerPathHandler(
+				'/download/referer',
+				{
+					handle: function (request, response) {
+						response.setStatusLine(null, 200, "OK");
+						response.setHeader(
+							"X-Echo",
+							request.hasHeader("Referer") ? request.getHeader("Referer") : "",
+							false
+						);
+						response.write("ok");
+					}
+				}
+			);
+			httpd.registerPathHandler(
 				'/download/auth',
 				{
 					handle: function (request, response) {
-						let val;
-						try {
-							val = request.getHeader("Authorization");
-						}
-						catch (e) {
-							val = "";
+						if (!request.hasHeader("Authorization")) {
+							response.setStatusLine(null, 401, "Unauthorized");
+							response.setHeader("WWW-Authenticate", 'Basic realm="Test"', false);
+							response.write("denied");
+							return;
 						}
 						response.setStatusLine(null, 200, "OK");
-						response.setHeader("X-Echo-Auth", val, false);
+						response.setHeader(
+							"X-Echo-Auth", request.getHeader("Authorization"), false
+						);
 						response.write("ok");
 					}
 				}
@@ -514,6 +614,30 @@ describe("Zotero.HTTP", function () {
 			assert.equal(req.headers.get("X-Echo"), "test-value");
 		});
 
+		it("should send a Referer header", async function () {
+			let dest = PathUtils.join(tmpDir, "referer.bin");
+			let referrer = baseURL + "article";
+			let req = await Zotero.HTTP.download(
+				baseURL + "download/referer",
+				dest,
+				{
+					headers: { Referer: referrer }
+				}
+			);
+			assert.equal(req.headers.get("X-Echo"), referrer);
+		});
+		
+		it("should send cookies", async function () {
+			Services.cookies.removeAll();
+			let url = baseURL + "cookie-check";
+			// Set the cookie
+			await Zotero.HTTP.request('GET', url, { successCodes: false });
+			
+			let dest = PathUtils.join(tmpDir, "cookie.bin");
+			let req = await Zotero.HTTP.download(url, dest, { successCodes: false });
+			assert.equal(req.status, 200);
+		});
+		
 		it("should throw UnexpectedStatusException for non-success status", async function () {
 			let dest = PathUtils.join(tmpDir, "404.bin");
 			let e = await getPromiseError(
@@ -608,6 +732,35 @@ describe("Zotero.HTTP", function () {
 			let nsUri = Services.io.newURI(url);
 			let req = await Zotero.HTTP.download(nsUri, dest);
 			assert.equal(req.status, 200);
+			assert.equal(req.headers.get("X-Echo-Auth"), expected);
+		});
+
+		it("should encode non-ASCII credentials the same way as request()", async function () {
+			let url = `http://user:p%C3%A4ssw%E2%82%ACrd`
+				+ `@127.0.0.1:${port}/download/auth`;
+			let dest = PathUtils.join(tmpDir, "auth-utf8.bin");
+			let req = await Zotero.HTTP.download(Services.io.newURI(url), dest);
+			assert.equal(req.status, 200);
+			
+			let xmlhttp = await Zotero.HTTP.request("GET", url);
+			assert.equal(
+				req.headers.get("X-Echo-Auth"),
+				xmlhttp.getResponseHeader("X-Echo-Auth")
+			);
+		});
+
+		it("should preserve literal %HH sequences in the password in request() and download()", async function () {
+			let username = "user";
+			let password = "example%41pass";
+			let expected = "Basic " + btoa(username + ":" + password);
+			let url = `http://${username}:${encodeURIComponent(password)}`
+				+ `@127.0.0.1:${port}/download/auth`;
+			
+			let xmlhttp = await Zotero.HTTP.request("GET", url);
+			assert.equal(xmlhttp.getResponseHeader("X-Echo-Auth"), expected);
+			
+			let dest = PathUtils.join(tmpDir, "auth-percent.bin");
+			let req = await Zotero.HTTP.download(Services.io.newURI(url), dest);
 			assert.equal(req.headers.get("X-Echo-Auth"), expected);
 		});
 	});

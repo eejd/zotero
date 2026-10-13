@@ -24,6 +24,12 @@ delete-or-backspace =
         [macos] Delete
        *[other] Backspace
     }
+-os-name =
+    { PLATFORM() ->
+        [macos] macOS
+        [windows] Windows
+       *[other] Linux
+    }
 general-print = Штампај
 general-remove = Уклони
 general-add = Додај
@@ -31,21 +37,26 @@ general-remind-me-later = Подсети ме касније
 general-dont-ask-again = Не питај ме поново
 general-choose-file = Изабери датотеку…
 general-open-settings = Отвори подешавања
-general-settings = Settings…
+general-settings = Podešavanja…
 general-help = Помоћ
 general-tag = Ознака
-general-got-it = Got It
+general-got-it = Razumem
 general-done = Готово
 general-view-troubleshooting-instructions = Погледај упутства за решавање проблема
-general-go-back = Go Back
-general-accept = Accept
+general-go-back = Idi nazad
+general-accept = Prihvati
 general-cancel = Откажи
+cancel-button =
+    .label = { general-cancel }
 general-show-in-library = Прикажи у библиотеци
-general-restartApp = Restart { -app-name }
+general-restartApp = Ponovo pokreni { -app-name }
 general-restartInTroubleshootingMode = Покрени у режиму за тражење проблема
 general-save = Сачувај
 general-clear = Очисти
+clear-button =
+    .label = { general-clear }
 general-update = Ажурирање
+general-reset-to-default = Vrati na podrazumevano
 general-back = Назад
 general-edit = Уређивање
 general-cut = Исеци
@@ -61,8 +72,11 @@ general-next = Следеће
 general-learn-more = Сазнајте више
 general-more-information = Више података
 general-warning = Упозорење
-general-type-to-continue = Type “{ $text }” to continue.
+general-type-to-continue = Ukucajte „{ $text }” da biste nastavili.
 general-continue = Настави
+general-allow = Dozvoli
+general-always-allow = Uvek dozvoli
+general-deny = Odbij
 general-red = Црвено
 general-orange = Наранџасто
 general-yellow = Жуто
@@ -76,10 +90,12 @@ general-maroon = Смеђе
 general-gray = Сиво
 general-black = Црно
 general-loading = Учитавам…
+db-checking-integrity = Provera integriteta baze podataka…
+db-repairing = Popravka baze podataka…
 citation-style-label = Стил цитата:
 language-label = Језик:
 menu-custom-group-submenu =
-    .label = More Options…
+    .label = Više opcija…
 menu-file-show-in-finder =
     .label = Прикажи у претрази
 menu-file-show-file =
@@ -119,22 +135,23 @@ menu-deletePermanently =
 menu-tools-plugins =
     .label = Прикључци
 menu-view-columns-move-left =
-    .label = Move Column Left
+    .label = Pomeri kolonu levo
 menu-view-columns-move-right =
-    .label = Move Column Right
+    .label = Pomeri kolonu desno
 menu-view-hide-context-annotation-rows =
-    .label = Hide Non-Matching Annotations
+    .label = Sakrij napomene koje ne odgovaraju filteru
 menu-view-note-font-size =
     .label = Величина фонта за белешке
 menu-view-note-tab-font-size =
-    .label = Note Tab Font Size
+    .label = Veličina fonta kartice beleške
 menu-show-tabs-menu =
-    .label = Show Tabs Menu
+    .label = Prikaži meni kartica
 menu-edit-copy-annotation =
     .label =
         { $count ->
-            [one] Copy Annotation
-           *[other] Copy { $count } Annotations
+            [one] Kopiraj napomenu
+            [few] Kopiraj { $count } napomene
+           *[other] Kopiraj { $count } napomena
         }
 main-window-command =
     .label = Библиотека
@@ -152,24 +169,140 @@ zotero-tabs-menu-filter =
 zotero-tabs-menu-close-button =
     .title = Затвори картицу
 zotero-toolbar-tabs-scroll-forwards =
-    .title = Scroll forwards
+    .title = Pomeri unapred
 zotero-toolbar-tabs-scroll-backwards =
-    .title = Scroll backwards
+    .title = Pomeri unazad
 toolbar-add-attachment =
     .tooltiptext = { add-attachment }
-recently-read = Recently Read
+recently-read = Nedavno čitano
 collections-menu-show-recently-read =
-    .label = Show { recently-read }
+    .label = Prikaži { recently-read }
 item-menu-remove-from-recently-read =
-    .label = Remove from { recently-read }…
-collections-menu-rename-collection =
-    .label = Преименуј збирку
-collections-menu-edit-saved-search =
-    .label = Уреди сачувану претрагу
+    .label = Ukloni iz { recently-read }…
+collections-menu-clear-all-last-read =
+    .label = Obriši sve datume poslednjeg čitanja…
+recently-read-clear-all-confirm = Svi datumi poslednjeg čitanja u ovoj biblioteci biće obrisani.
+items-list-load-error-plugin = Error loading items list. Disabling the “{ $plugin }” plugin and restarting { -app-name } may fix this.
+items-section-collections-selected =
+    { $count ->
+        [one] Изабрана је { $count } збирка
+        [few] Изабране су { $count } збирке
+       *[other] Изабрано је { $count } збирки
+    }
+items-section-searches-selected =
+    { $count ->
+        [one] Izabrana je { $count } sačuvana pretraga
+        [few] Izabrane su { $count } sačuvane pretrage
+       *[other] Izabrano je { $count } sačuvanih pretraga
+    }
+items-section-sources-selected =
+    { $count ->
+        [one] Izabran je { $count } izvor
+        [few] Izabrana su { $count } izvora
+       *[other] Izabrano je { $count } izvora
+    }
+items-section-library-collections =
+    { $count ->
+        [one] { $library } (izabrana { $count } zbirka)
+        [few] { $library } (izabrane { $count } zbirke)
+       *[other] { $library } (izabrano { $count } zbirki)
+    }
+items-section-library-searches =
+    { $count ->
+        [one] { $library } (izabrana { $count } sačuvana pretraga)
+        [few] { $library } (izabrane { $count } sačuvane pretrage)
+       *[other] { $library } (izabrano { $count } sačuvanih pretraga)
+    }
+items-section-library-sources =
+    { $count ->
+        [one] { $library } (izabran { $count } izvor)
+        [few] { $library } (izabrana { $count } izvora)
+       *[other] { $library } (izabrano { $count } izvora)
+    }
+items-section-library-recently-read = { $library } ({ recently-read })
+items-section-library = { $library }
+collections-menu-rename =
+    .label = Preimenuj
+edit-saved-search = Уреди сачувану претрагу
+collections-menu-edit-search =
+    .label = Uredi pretragu
+collections-menu-duplicate-search =
+    .label = Napravi duplikat pretrage
 collections-menu-move-collection =
     .label = Премести у
 collections-menu-copy-collection =
     .label = Копирај у
+collections-menu-export =
+    .label = Извоз…
+collections-menu-generate-report =
+    .label = Napravi izveštaj…
+collections-menu-create-bibliography =
+    .label = Napravi bibliografiju…
+collections-menu-unsubscribe =
+    .label = Otkaži pretplatu…
+collections-menu-delete =
+    .label =
+        { $count ->
+            [one] Obriši zbirku…
+            [few] Obriši zbirke…
+           *[other] Obriši zbirke…
+        }
+collections-menu-delete-with-items =
+    .label =
+        { $count ->
+            [one] Obriši zbirku i stavke…
+            [few] Obriši zbirke i stavke…
+           *[other] Obriši zbirke i stavke…
+        }
+collections-menu-delete-search =
+    .label =
+        { $count ->
+            [one] Obriši pretragu…
+            [few] Obriši pretrage…
+           *[other] Obriši pretrage…
+        }
+collections-delete-title =
+    { $count ->
+        [one] Obriši zbirku
+        [few] Obriši zbirke
+       *[other] Obriši zbirke
+    }
+collections-delete-message =
+    { $count ->
+        [one] Da li ste sigurni da želite da obrišete ovu zbirku?
+        [few] Da li ste sigurni da želite da obrišete { $count } zbirke?
+       *[other] Da li ste sigurni da želite da obrišete { $count } zbirki?
+    }
+collections-delete-keep-items =
+    { $count ->
+        [one] Stavke unutar ove zbirke neće biti obrisane.
+        [few] Stavke unutar ovih zbirki neće biti obrisane.
+       *[other] Stavke unutar ovih zbirki neće biti obrisane.
+    }
+collections-delete-with-items-title =
+    { $count ->
+        [one] Obriši zbirku i stavke
+        [few] Obriši zbirke i stavke
+       *[other] Obriši zbirke i stavke
+    }
+collections-delete-with-items-message =
+    { $count ->
+        [one] Da li ste sigurni da želite da obrišete ovu zbirku i premestite sve stavke unutar nje u Smeće?
+        [few] Da li ste sigurni da želite da obrišete { $count } zbirke i premestite sve stavke unutar njih u Smeće?
+       *[other] Da li ste sigurni da želite da obrišete { $count } zbirki i premestite sve stavke unutar njih u Smeće?
+    }
+collections-delete-search-title =
+    { $count ->
+        [one] Obriši pretragu
+        [few] Obriši pretrage
+       *[other] Obriši pretrage
+    }
+collections-delete-search-message =
+    { $count ->
+        [one] Da li ste sigurni da želite da obrišete ovu pretragu?
+        [few] Da li ste sigurni da želite da obrišete { $count } pretrage?
+       *[other] Da li ste sigurni da želite da obrišete { $count } pretraga?
+    }
 item-creator-moveDown =
     .label = Премести доле
 item-creator-moveToTop =
@@ -178,26 +311,34 @@ item-creator-moveUp =
     .label = Премести горе
 item-menu-viewAttachment =
     .label =
-        Open { $numAttachments ->
+        Otvori { $numAttachments ->
             [one]
                 { $attachmentType ->
-                    [pdf] PDF
-                    [epub] EPUB
-                    [snapshot] Snapshot
-                    [note] Note
-                   *[other] Attachment
+                    [pdf] PDF dokument
+                    [epub] EPUB knjigu
+                    [snapshot] snimak stranice
+                    [note] belešku
+                   *[other] prilog
+                }
+            [few]
+                { $attachmentType ->
+                    [pdf] PDF dokumente
+                    [epub] EPUB knjige
+                    [snapshot] snimke stranica
+                    [note] beleške
+                   *[other] priloge
                 }
            *[other]
                 { $attachmentType ->
-                    [pdf] PDFs
-                    [epub] EPUBs
-                    [snapshot] Snapshots
-                    [note] Notes
-                   *[other] Attachments
+                    [pdf] PDF dokumente
+                    [epub] EPUB knjige
+                    [snapshot] snimke stranica
+                    [note] beleške
+                   *[other] priloge
                 }
         } { $openIn ->
-            [tab] in New Tab
-            [window] in New Window
+            [tab] u novoj kartici
+            [window] u novom prozoru
            *[other] { "" }
         }
 item-menu-add-file =
@@ -209,13 +350,14 @@ item-menu-add-url =
 item-menu-change-parent-item =
     .label = Промени родитељску ставку…
 item-menu-relate-items =
-    .label = Relate Items
+    .label = Poveži stavke
 view-online = Погледај на мрежи
 item-menu-option-view-online =
     .label = { view-online }
 item-button-view-online =
     .tooltiptext = { view-online }
 file-renaming-file-renamed-to = Датотека је преименована у { $filename }
+file-access-error-fs-corrupted = { -os-name } reported that the file or disk is corrupted. Run a disk check on the drive containing the file.
 itembox-button-options =
     .tooltiptext = Отвори контекстни мени
 itembox-button-merge =
@@ -271,7 +413,9 @@ file-interface-items-were-relinked =
         [one] Ставка је поново повезана
        *[other] Поново повезаних ставки: { $numRelinked }
     }
-import-mendeley-encrypted = Не могу да прочитам изабрану базу података из Мендељејева, вероватно зато што је шифрована. Погледајте <a data-l10n-name="mendeley-import-kb">Како да увезем библиотеку из Мендељејева у Зотеро?</a> за више информација.
+import-mendeley-cannot-decrypt = The selected Mendeley database could not be decrypted. This can happen if the database file has been renamed. See <a data-l10n-name="mendeley-import-kb">How do I import a Mendeley library into Zotero?</a> for more information.
+import-mendeley-unsupported = The selected file does not appear to be a Mendeley database. See <a data-l10n-name="mendeley-import-kb">How do I import a Mendeley library into Zotero?</a> for more information.
+import-mendeley-db-in-use = The selected Mendeley database is in use. Please quit Mendeley Desktop and try again.
 file-interface-import-error-translator = Грешка приликом увоза изабране датотеке преко „{ $translator }“. Проверите да ли је датотека исправна и покушајте поново.
 import-online-intro = У следећем кораку ћемо вас позвати да се пријавите на { $targetAppOnline } и дате дозволе за приступ програму { -app-name }. Ово је нопходно да увезете вашу { $targetApp } библиотеку у { -app-name }.
 import-online-intro2 = { -app-name } никада неће видети или чувати вашу { $targetApp } лозинку.
@@ -282,6 +426,7 @@ import-online-relink-only =
     .label = Поново повежи цитате из Мендељејева
 import-online-relink-kb = { general-more-information }
 import-online-connection-error = { -app-name } не може да се повеже на { $targetApp }. Проверите везу са интернетом и покушајте поново.
+tab-title-multiple-collections = Više
 items-table-cell-notes =
     .aria-label =
         { $count ->
@@ -289,9 +434,9 @@ items-table-cell-notes =
             [few] { $count } белешке
            *[other] { $count } белешки
         }
-items-column-added-by = Added By
-items-column-modified-by = Modified By
-items-column-last-read = Last Read
+items-column-added-by = Dodao/la
+items-column-modified-by = Izmenio/la
+items-column-last-read = Poslednji put čitano
 report-error =
     .label = Грешка у извештају…
 rtfScan-wizard =
@@ -325,7 +470,7 @@ runJS-title = Покрени ЈаваСкрипт
 runJS-editor-label = Код:
 runJS-run = Покрени
 runJS-help = { general-help }
-runJS-completed = completed successfully
+runJS-completed = uspešno završeno
 runJS-result =
     { $type ->
         [async] Враћена вредност:
@@ -367,6 +512,7 @@ styleEditor-editor =
     .aria-label = Уређивач стилова
 styleEditor-preview =
     .aria-label = Преглед
+stylePreview-generating = Generisanje pregleda…
 publications-intro-page = Моји радови
 publications-intro = Ставке које сте додали у Моји радови ће бити приказане на вашој страници у оквиру сајта zotero.org. Уколико желите да додате и прилоге, они ће бити јавно доступни под лиценцом који изаберете. Додајте само радове које сте сами направили и датотеке за које поседујете одговарајуће правне дозволе за дељење.
 publications-include-checkbox-files =
@@ -431,12 +577,12 @@ menu-ui-density-comfortable =
     .label = Удобно
 menu-ui-density-compact =
     .label = Збијено
-pane-item-details = Item Details
+pane-item-details = Detalji stavke
 pane-info = Подаци
 pane-abstract = Сажетак
 pane-attachments = Прилози
 pane-notes = Белешке
-pane-note-info = Note Info
+pane-note-info = Informacije o belešci
 pane-libraries-collections = Библиотеке и збирке
 pane-tags = Ознаке
 pane-related = Сродно
@@ -467,7 +613,7 @@ section-attachments-annotations =
             [few] { $count } белешке
            *[other] { $count } белешки
         }
-section-attachments-move-to-trash-message = Are you sure you want to move “{ $title }” to the trash?
+section-attachments-move-to-trash-message = Da li ste sigurni da želite da premestite „{ $title }” u smeće?
 section-notes =
     .label =
         { $count ->
@@ -534,13 +680,13 @@ sidenav-related =
 sidenav-main-btn-grouping =
     .aria-label = { pane-item-details }
 sidenav-reorder-up =
-    .label = Move Section Up
+    .label = Pomeri odeljak nagore
 sidenav-reorder-down =
-    .label = Move Section Down
+    .label = Pomeri odeljak nadole
 sidenav-reorder-reset =
-    .label = Reset Section Order
+    .label = Resetuj redosled odeljaka
 toggle-item-pane =
-    .tooltiptext = Toggle Item Pane
+    .tooltiptext = Prikaži/sakrij okno stavke
 toggle-context-pane =
     .tooltiptext = Приказ контекстне површи
 pin-section =
@@ -572,7 +718,7 @@ new-collection-dialog =
 new-collection-name = Име:
 new-collection-create-in = Направи у:
 show-publications-menuitem =
-    .label = Show My Publications
+    .label = Prikaži Moje publikacije
 attachment-info-title = Наслов
 attachment-info-filename = Име датотеке
 attachment-info-accessed = Приступљено
@@ -590,29 +736,29 @@ attachment-info-convert-note =
 section-note-info =
     .label = { pane-note-info }
 note-info-title = Наслов
-note-info-parent-item = Parent Item
+note-info-parent-item = Nadređena stavka
 note-info-parent-item-button =
     { $hasParentItem ->
         [true] { $parentItemTitle }
-       *[false] None
+       *[false] Nema
     }
     .title =
         { $hasParentItem ->
-            [true] View parent item in library
-           *[false] View note item in library
+            [true] Prikaži nadređenu stavku u biblioteci
+           *[false] Prikaži stavku beleške u biblioteci
         }
-note-info-date-created = Created
+note-info-date-created = Napravljeno
 note-info-date-modified = Измењено
 note-info-size = Величина
-note-info-word-count = Word Count
-note-info-character-count = Character Count
+note-info-word-count = Broj reči
+note-info-character-count = Broj znakova
 item-title-empty-note = Безимена белешка
 attachment-preview-placeholder = Нема прилога за преглед
 attachment-rename-from-parent =
-    .tooltiptext = Rename File to Match Parent Item
-account-log-in = Log In
-account-not-logged-in-text = Log in to your Zotero account to sync your data.
-account-error-login-session-expired = Your login session has expired. Please try again.
+    .tooltiptext = Preimenuj datoteku da se podudara sa nadređenom stavkom
+account-log-in = Prijavi se
+account-not-logged-in-text = Prijavite se na svoj Zotero nalog da biste sinhronizovali podatke.
+account-error-login-session-expired = Vaša sesija za prijavu je istekla. Pokušajte ponovo.
 toggle-preview =
     .label =
         { $type ->
@@ -620,13 +766,25 @@ toggle-preview =
             [collapsed] Прикажи
            *[unknown] Укључи/искључи
         } преглед прилога
-annotation-image-not-available = [Image not available]
+annotation-image-not-available = [Slika nije dostupna]
 quicksearch-mode =
     .aria-label = Режим брзе претраге
 quicksearch-input =
     .aria-label = Брза претрага
     .placeholder = { $placeholder }
     .aria-description = { $placeholder }
+advanced-search = Напредна претрага
+menuitem-advanced-search =
+    .label = { advanced-search }
+quicksearch-advanced-search-button =
+    .tooltiptext = { advanced-search }
+    .aria-label = { advanced-search }
+advanced-search-close =
+    .tooltiptext = Zatvori naprednu pretragu
+advanced-search-expand =
+    .tooltiptext = Proširi naprednu pretragu
+advanced-search-collapse =
+    .tooltiptext = Skupi naprednu pretragu
 item-pane-header-view-as =
     .label = Прегледај као
 item-pane-header-none =
@@ -688,11 +846,66 @@ architecture-warning-action = Преузми 64-творо битни { -app-nam
 architecture-x64-on-arm64-message = { -app-name } је покренут у кроз емулацију. Доступна верзија програма { -app-name } за ваш процесор је много ефикаснија.
 architecture-x64-on-arm64-action = Преузми { -app-name } за АРМ64
 first-run-guidance-authorMenu = { -app-name } вам дозвољава да унесете уредника и преводиоца. Можете да поставите аутора за уредника или преводиоца из овог менија.
-first-run-guidance-readAloud = { -app-name } can now read your documents to you using natural-sounding voices.
+first-run-guidance-readAloud = { -app-name } sada može da vam čita vaše dokumente koristeći glasove koji zvuče prirodno.
 advanced-search-remove-btn =
-    .tooltiptext = { general-remove }
+    .tooltiptext = Ukloni uslov
 advanced-search-add-btn =
-    .tooltiptext = { general-add }
+    .tooltiptext = Dodaj uslov
+advanced-search-group-btn =
+    .tooltiptext = Dodaj grupu uslova
+advanced-search-remove-group-btn =
+    .tooltiptext = Ukloni grupu
+advanced-search-ungroup-btn =
+    .tooltiptext = Razgrupiši uslove
+advanced-search-result-level-menu =
+    .aria-label = Tip rezultata
+advanced-search-result-level-prefix-root =
+    .value = Нађи
+advanced-search-join-prefix-root =
+    .value = koji se podudaraju
+advanced-search-result-level-any =
+    .label = bilo koje stavke
+advanced-search-result-level-item =
+    .label = stavke najvišeg nivoa
+advanced-search-result-level-attachment =
+    .label = priloge
+advanced-search-result-level-note =
+    .label = beleške
+advanced-search-result-level-annotation =
+    .label = напомене
+advanced-search-binding-menu =
+    .aria-label = Poklapanje sa istom stavkom
+advanced-search-binding-separate =
+    .label = odvojeno
+advanced-search-binding-same-attachment =
+    .label = u istom prilogu
+advanced-search-binding-same-note =
+    .label = u istoj belešci
+advanced-search-binding-same-annotation =
+    .label = u istoj napomeni
+advanced-search-of-the-following =
+    .value = od sledećeg
+advanced-search-binding-hint-attachment =
+    .value = Ovi uslovi se mogu poklapati sa odvojenim prilozima.
+advanced-search-binding-hint-note =
+    .value = Ovi uslovi se mogu poklapati sa odvojenim beleškama.
+advanced-search-binding-hint-annotation =
+    .value = Ovi uslovi se mogu poklapati sa odvojenim napomenama.
+advanced-search-level-warning-mixed = Ovi uslovi se ne mogu svi poklapati sa istom stavkom, tako da ova pretraga nikada neće vratiti rezultate. Pokušajte da poklopite „{ $matchAny }” od njih, ili postavite tip rezultata na „{ $topLevelItems }”.
+advanced-search-level-warning-unreachable = Ova pretraga ima uslov koji se ne može primeniti na izabrani tip rezultata. Postavite tip rezultata na „{ $topLevelItems }” ili uklonite nekompatibilni uslov.
+advanced-search-group-warning-unreachable =
+    Ovaj uslov ne može da se primeni zajedno sa ostalim uslovima na { $entity ->
+        [attachment] prilog
+        [note] belešku
+       *[annotation] napomenu
+    }. Proverite ih odvojeno ili uklonite neodgovarajući uslov.
+advanced-search-group-warning-mixed = Ovi uslovi se ne mogu svi poklapati sa istom stavkom, tako da se ova grupa nikada neće poklapati. Pokušajte da poklopite „{ $matchAny }” od njih, ili postavite tip rezultata na „{ $topLevelItems }”.
+advanced-search-bind-same-attachment =
+    .label = Poklapanje sa istim prilogom
+advanced-search-bind-same-note =
+    .label = Poklapanje sa istom beleškom
+advanced-search-bind-same-annotation =
+    .label = Poklapanje sa istom napomenom
 advanced-search-conditions-menu =
     .aria-label = Услов за претрагу
     .label = { $label }
@@ -702,11 +915,46 @@ advanced-search-operators-menu =
 advanced-search-condition-input =
     .aria-label = Вредност
     .label = { $label }
+search-operator-isEmpty = je prazno
+search-operator-isNotEmpty = nije prazno
 search-conditions-tooltip-fields = Поља:
 search-conditions-collection = Колекција
 search-conditions-savedSearch = Сачувана претрага
 search-conditions-itemTypeID = Врста ставке
+search-query-keyword-creator = by
+search-query-keyword-publication = in, publication, journal
+search-query-keyword-item-type = type
+search-query-keyword-language = lang
+search-query-keyword-abstract = abstract
+search-query-keyword-fulltext = fulltext, text
+search-query-keyword-date = year
+search-query-keyword-date-before = before
+search-query-keyword-date-after = after, since
+search-query-keyword-date-added = added
+search-query-keyword-date-modified = modified
+search-query-keyword-no-annotations = no annotations
+search-query-keyword-has-annotations = has annotations
+search-query-keyword-no-notes = no notes
+search-query-keyword-has-notes = has notes
+search-query-keyword-no-tags = no tags
+search-query-keyword-has-tags = has tags
+search-query-keyword-no-attachments = no attachments
+search-query-keyword-has-attachments = has attachments
+search-query-keyword-and = and
+search-query-keyword-or = or
+search-query-keyword-no = no
+search-query-keyword-has = has
+search-query-keyword-days = day, days
+search-query-keyword-weeks = week, weeks
+search-query-keyword-months = month, months
+search-query-keyword-years = year, years
+search-query-keyword-range = between 2020 and 2025, from 2020 to 2025, 2020 to 2025
+search-query-keyword-range-excluded = not between 2020 and 2025
 search-conditions-tag = Ознака
+search-conditions-numTags = Broj oznaka
+search-conditions-numNotes = Broj beleški
+search-conditions-numAttachments = Broj priloga
+search-conditions-numAnnotations = Broj napomena
 search-conditions-note = Белешка
 search-conditions-childNote = Подбелешка
 search-conditions-creator = Аутор
@@ -725,10 +973,26 @@ search-conditions-dateModified = Датум промене
 search-conditions-fulltextContent = Садржај прилога
 search-conditions-programmingLanguage = Програмски језик
 search-conditions-fileTypeID = Врста приложене датотеке
-search-conditions-lastRead = Attachment Last Read
+search-conditions-attachmentStorageType = Vrsta skladištenja priloga
+search-conditions-lastRead = Prilog poslednji put pročitan
 search-conditions-annotationText = Текст напомене
 search-conditions-annotationComment = Коментар напомене
+search-conditions-annotationType = Vrsta napomene
+search-conditions-annotationColor = Boja napomene
+search-conditions-annotationAuthor = Autor napomene
 search-conditions-anyField = Сва поља
+search-conditions-titleCreatorYear = Наслов, аутор, година
+search-conditions-submenu-attachment = Прилог
+search-conditions-submenu-annotation = Напомена
+search-conditions-short-fulltextContent = Sadržaj
+search-conditions-short-fileTypeID = Врста датотеке
+search-conditions-short-attachmentStorageType = Tip skladištenja
+search-conditions-short-lastRead = Poslednji put čitano
+search-conditions-short-annotationText = Tekst
+search-conditions-short-annotationComment = Komentar
+search-conditions-short-annotationType = Врста
+search-conditions-short-annotationColor = Boja
+search-conditions-short-annotationAuthor = Аутор
 find-pdf-files-added =
     { $count ->
         [one] { $count } поље је додато
@@ -740,7 +1004,7 @@ select-items-window =
 select-items-dialog =
     .buttonlabelaccept = Изабери
 select-items-convertToStandalone =
-    .label = Convert to Standalone
+    .label = Pretvori u samostalnu stavku
 select-items-convertToStandaloneAttachment =
     .label =
         { $count ->
@@ -751,8 +1015,9 @@ select-items-convertToStandaloneAttachment =
 select-items-convertToStandaloneNote =
     .label =
         { $count ->
-            [one] Convert to Standalone Note
-           *[other] Convert to Standalone Notes
+            [one] Pretvori u samostalnu belešku
+            [few] Pretvori u samostalne beleške
+           *[other] Pretvori u samostalne beleške
         }
 file-type-webpage = Веб страница
 file-type-image = Слика
@@ -762,7 +1027,10 @@ file-type-video = Видео
 file-type-presentation = Презентација
 file-type-document = Документ
 file-type-ebook = Е-књига
-post-upgrade-message = You’ve been upgraded to <span data-l10n-name="post-upgrade-appver">{ -app-name } { $version }</span>! Learn about <a data-l10n-name="new-features-link">what’s new</a>.
+attachment-storage-type-storedFile = Sačuvana datoteka
+attachment-storage-type-linkedFile = Повезана датотека
+attachment-storage-type-webLink = Веза на вебу
+post-upgrade-message = Nadograđeni ste na <span data-l10n-name="post-upgrade-appver">{ -app-name } { $version }</span>! Saznajte <a data-l10n-name="new-features-link">šta je novo</a>.
 post-upgrade-remind-me-later =
     .label = { general-remind-me-later }
 post-upgrade-done =
@@ -770,33 +1038,213 @@ post-upgrade-done =
 text-action-paste-and-search =
     .label = Убаци и претражи
 mac-word-plugin-install-message = Зотеро треба да приступи подацима програма Word како би инсталирао прикључак за Word.
+mac-word-plugin-install-folder-message = { -app-name } zahteva pristup Word-ovoj fascikli za pokretanje kako bi instalirao Word dodatak.
 mac-word-plugin-install-action-button =
     .label = Инсталирај Word прикључак
 mac-word-plugin-install-remind-later-button =
     .label = { general-remind-me-later }
 mac-word-plugin-install-dont-ask-again-button =
     .label = { general-dont-ask-again }
-file-renaming-banner-message = { -app-name } now automatically keeps attachment filenames in sync as you make changes to items.
+mac-word-plugin-install-folder-dialog-title = Instaliraj dodatak u Wordovu početnu fasciklu
+mac-word-plugin-install-folder-dialog-button = Инсталирај
+mac-word-plugin-install-wrong-folder-selected = Predložena fascikla mora biti izabrana. Pokušajte ponovo bez biranja druge fascikle.
+file-renaming-banner-message = { -app-name } sada automatski održava imena datoteka priloga sinhronizovanim dok menjate stavke.
 file-renaming-banner-documentation-link = { general-learn-more }
 file-renaming-banner-settings-link = { general-settings }
-connector-version-warning = The { -app-name } Connector must be updated to work with this version of { -app-name }.
-userjs-pref-warning = Some { -app-name } settings have been overridden using an unsupported method. { -app-name } will revert them and restart.
-migrate-extra-fields-progress-message = Migrating new fields from Extra field
+connector-version-warning = { -app-name } Connector mora biti ažuriran da bi radio sa ovom verzijom programa { -app-name }.
+userjs-pref-warning = Neka { -app-name } podešavanja su prepisana korišćenjem nepodržanog metoda. { -app-name } će ih vratiti na staro i ponovo se pokrenuti.
+migrate-extra-fields-progress-headline = Ažuriranje stavki…
+migrate-extra-fields-progress-message = Premeštanje novih polja iz polja „Dodatni podaci”
+fulltext-indexing-progress-title = Indeksiranje
+fulltext-indexing-progress-message = Rezultati pretrage celog teksta mogu biti nepotpuni dok se indeksiranje ne završi.
 long-tag-fixer-window-title =
-    .title = Split Tags
+    .title = Podeli oznake
 long-tag-fixer-button-dont-split =
-    .label = Don’t Split
+    .label = Ne deli
 menu-normalize-attachment-titles =
-    .label = Normalize Attachment Titles…
-normalize-attachment-titles-title = Normalize Attachment Titles
+    .label = Normalizuj naslove priloga…
+normalize-attachment-titles-title = Normalizuj naslove priloga
 normalize-attachment-titles-text =
-    { -app-name } automatically renames files on disk using parent item metadata, but it uses separate, simpler titles such as “Full Text PDF”, “Preprint PDF”, or “PDF” for primary attachments to keep the items list cleaner and avoid duplicating information.
+    { -app-name } automatski preimenuje datoteke na disku koristeći metapodatke nadređene stavke, ali koristi zasebne, jednostavnije naslove kao što su „Full Text PDF”, „Preprint PDF” ili „PDF” za primarne priloge kako bi lista stavki bila preglednija i kako bi se izbeglo dupliranje informacija.
     
-    In older versions of { -app-name }, as well as when using certain plugins, attachment titles could be changed unnecessarily to match the filenames.
+    U starijim verzijama programa { -app-name }, kao i pri korišćenju određenih dodataka, naslovi priloga su mogli biti nepotrebno promenjeni da bi se podudarali sa imenima datoteka.
     
-    Would you like to update the selected attachments to use simpler titles? Only primary attachments with titles that match the filename will be changed.
+    Da li želite da ažurirate izabrane priloge da koriste jednostavnije naslove? Biće promenjeni samo primarni prilozi sa naslovima koji se podudaraju sa imenom datoteke.
 banner-close-button =
-    .aria-label = Dismiss notification
+    .aria-label = Odbaci obaveštenje
 plugins-blocked-plugin =
-    .message = This plugin has been disabled by { -app-name }.
-data-dir-unsupported-storage = This can happen if the { -app-name } data directory is in a cloud storage folder (OneDrive, Dropbox, etc.) or on a network share.
+    .message = Ovaj dodatak je onemogućen od strane programa { -app-name }.
+data-dir-unsupported-storage = Ovo se može desiti ako se direktorijum sa podacima programa { -app-name } nalazi u fascikli za skladištenje u oblaku (OneDrive, Dropbox, itd.) ili na mrežnom deljenom disku.
+data-dir-check-parent-write-access = Make sure you have write access to { $path } and that security software isn’t preventing { -app-name } from writing to the disk.
+login-manager-reset = { -app-name } nije mogao da pročita vaše sačuvane podatke za prijavljivanje, pa su oni resetovani. Molimo vas da se ponovo prijavite u oknu { preferences-pane-account } u podešavanjima programa { -app-name }.
+login-manager-open-profile-directory = Open Profile Directory
+os-keystore-save-failed =
+    { PLATFORM() ->
+        [macos] { -app-name } nije mogao da pristupi { -os-name } Keychain-u kako bi bezbedno sačuvao vaše akreditive. Proverite da li je vaš Keychain dostupan i pokušajte ponovo.
+        [windows] { -app-name } nije mogao bezbedno da sačuva vaše akreditive. Pokušajte ponovo ili ponovo pokrenite { -app-name }.
+       *[other] { -app-name } nije mogao da pristupi vašem { -os-name } keyring-u kako bi bezbedno sačuvao vaše akreditive. Proverite da li je keyring servis pokrenut i pokušajte ponovo.
+    }
+os-keystore-read-failed =
+    { PLATFORM() ->
+        [macos] { -app-name } nije mogao da pristupi aplikaciji Keychain na sistemu { -os-name } da bi pročitao sačuvane podatke za prijavu. Proverite da li je Keychain dostupan i pokušajte ponovo.
+        [windows] { -app-name } nije mogao da koristi Menadžer akreditiva na sistemu { -os-name } da bi pročitao sačuvane podatke za prijavu. Pokušajte ponovo ili ponovo pokrenite { -app-name }.
+       *[other] { -app-name } nije mogao da pristupi skladištu ključeva na sistemu { -os-name } da bi pročitao sačuvane podatke za prijavu. Proverite da li je pokrenuta usluga kao što je GNOME Keyring ili KWallet, pa pokušajte ponovo.
+    }
+os-keystore-read-unrecoverable =
+    { PLATFORM() ->
+        [macos] { -app-name } couldn’t read your saved credentials from the { -os-name } Keychain.
+        [windows] { -app-name } couldn’t read your saved credentials from { -os-name } Credential Manager.
+       *[other] { -app-name } couldn’t read your saved credentials from your { -os-name } keyring.
+    } You’ll need to set up syncing again in the { -app-name } settings.
+os-keystore-save-unencrypted = { -app-name } može umesto toga da sačuva podatke za prijavu bez šifrovanja. Svako ko ima pristup fascikli profila programa { -app-name } tada bi mogao da ih pročita.
+os-keystore-save-unencrypted-button = Ipak sačuvaj
+os-keystore-migrate-failed =
+    { PLATFORM() ->
+        [macos] { -app-name } nije mogao da pristupi { -os-name } Keychain-u kako bi šifrovao vaše sačuvane akreditive. Vaši akreditivi ostaju sačuvani nešifrovani na disku. Proverite da li je vaš Keychain dostupan i ponovo pokrenite { -app-name }.
+        [windows] { -app-name } nije mogao da šifruje vaše sačuvane akreditive. Vaši akreditivi ostaju sačuvani nešifrovani na disku. Ponovo pokrenite { -app-name } i pokušajte ponovo.
+       *[other] { -app-name } nije mogao da pristupi vašem { -os-name } keyring-u kako bi šifrovao vaše sačuvane akreditive. Vaši akreditivi ostaju sačuvani nešifrovani na disku. Proverite da li je keyring servis pokrenut i ponovo pokrenite { -app-name }.
+    }
+search-button =
+    .label = Претрага
+save-search-new-button =
+    .label = Sačuvaj pretragu…
+save-search-edit-button =
+    .label = Сачувај
+save-search-name-title = Сачувај претрагу
+save-search-name-message = Unesite ime za sačuvanu pretragu:
+saved-search-close-confirmation-title = Uređivanje sačuvane pretrage
+saved-search-close-confirmation-body = Da li želite da sačuvate izmene koje ste napravili u ovoj sačuvanoj pretrazi?
+item-pane-batch-editing-prompt =
+    .aria-label = Grupno uređivanje
+item-pane-batch-editing-enable =
+    .label = Uredi više stavki…
+item-pane-batch-editing-multiple-values-placeholder = Više
+item-pane-batch-editing-clear-values = Obriši sve vrednosti
+item-pane-batch-editing-header =
+    { $count ->
+        [one] Uređivanje { $count } stavke
+        [few] Uređivanje { $count } stavke
+       *[other] Uređivanje { $count } stavki
+    }
+item-pane-batch-editing-done =
+    .label = { general-done }
+undo-action-edit-metadata =
+    { $count ->
+        [one] Uredi metapodatke
+        [few] Uredi metapodatke za { $count } stavke
+       *[other] Uredi metapodatke za { $count } stavki
+    }
+undo-action-edit-field =
+    { $count ->
+        [one] Uređivanje polja „{ $field }”
+        [few] Uređivanje polja „{ $field }” za { $count } stavke
+       *[other] Uređivanje polja „{ $field }” za { $count } stavki
+    }
+undo-action-normalize-attachment-titles = Normalizuj naslov priloga
+undo-action-trash =
+    { $count ->
+        [one] Premesti stavku u smeće
+        [few] Premesti { $count } stavke u smeće
+       *[other] Premesti { $count } stavki u smeće
+    }
+undo-action-restore-items =
+    { $count ->
+        [one] Vrati stavku
+        [few] Vrati { $count } stavke
+       *[other] Vrati { $count } stavki
+    }
+undo-action-trash-collection =
+    { $count ->
+        [one] Premesti zbirku u smeće
+        [few] Premesti { $count } zbirke u smeće
+       *[other] Premesti { $count } zbirki u smeće
+    }
+undo-action-trash-search =
+    { $count ->
+        [one] Premesti sačuvanu pretragu u smeće
+        [few] Premesti { $count } sačuvane pretrage u smeće
+       *[other] Premesti { $count } sačuvanih pretraga u smeće
+    }
+undo-action-restore-collection =
+    { $count ->
+        [one] Vrati zbirku
+        [few] Vrati { $count } zbirke
+       *[other] Vrati { $count } zbirki
+    }
+undo-action-restore-objects =
+    { $count ->
+        [one] Vrati objekat
+        [few] Vrati { $count } objekta
+       *[other] Vrati { $count } objekata
+    }
+undo-action-add-to-collection =
+    { $count ->
+        [one] Dodaj u zbirku
+        [few] Dodaj { $count } stavke u zbirku
+       *[other] Dodaj { $count } stavki u zbirku
+    }
+undo-action-remove-from-collection =
+    { $count ->
+        [one] Ukloni iz zbirke
+        [few] Ukloni { $count } stavke iz zbirke
+       *[other] Ukloni { $count } stavki iz zbirke
+    }
+undo-action-move-to-collection =
+    { $count ->
+        [one] Premesti u zbirku
+        [few] Premesti { $count } stavke u zbirku
+       *[other] Premesti { $count } stavki u zbirku
+    }
+undo-action-rename-collection = Преименуј збирку
+undo-action-move-collection = Premesti zbirku
+undo-action-add-tag =
+    { $count ->
+        [one] Dodaj oznaku
+        [few] Dodaj oznaku na { $count } stavke
+       *[other] Dodaj oznaku na { $count } stavki
+    }
+undo-action-change-tag = Promeni oznaku
+undo-action-split-tag = Razdvoji oznaku
+undo-action-remove-tag =
+    { $count ->
+        [one] Ukloni oznaku
+        [few] Ukloni oznaku sa { $count } stavke
+       *[other] Ukloni oznaku sa { $count } stavki
+    }
+undo-action-remove-tags-from-item =
+    { $count ->
+        [one] Ukloni oznaku
+        [few] Ukloni { $count } oznake
+       *[other] Ukloni { $count } oznaka
+    }
+undo-action-remove-all-tags = Ukloni sve oznake
+undo-action-edit-note = Уреди белешку
+undo-action-add-creator = Dodaj autora
+undo-action-remove-creator = Ukloni autora
+undo-action-edit-creator = Uredi autora
+undo-action-reorder-creator = Promeni redosled autora
+undo-action-change-type = Промени врсту ставке
+undo-action-change-parent-item =
+    { $count ->
+        [one] Promeni nadređenu stavku
+        [few] Promeni nadređenu stavku za { $count } stavke
+       *[other] Promeni nadređenu stavku za { $count } stavki
+    }
+undo-action-convert-to-standalone =
+    { $count ->
+        [one] Pretvori u samostalnu stavku
+        [few] Pretvori { $count } stavke u samostalne stavke
+       *[other] Pretvori { $count } stavki u samostalne stavke
+    }
+undo-action-add-related = Dodaj srodno
+undo-action-remove-related = Ukloni srodno
+undo-action-merge-items =
+    { $count ->
+        [one] Spoji stavku
+        [few] Spoji { $count } stavke
+       *[other] Spoji { $count } stavki
+    }
+menu-edit-undo-action = Opozovi { $action }
+menu-edit-redo-action = Ponovi { $action }
+local-api-authorize-title = Lokalna API autorizacija
+local-api-authorize-text = „{ $appName }”, aplikacija koja je pokrenuta na vašem računaru, želi da izmeni vašu { -app-name } biblioteku.

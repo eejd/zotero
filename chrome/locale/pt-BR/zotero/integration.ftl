@@ -32,6 +32,7 @@ integration-citationDialog-section-cited =
 integration-citationDialog-details-suffix = Sufixo
 integration-citationDialog-details-prefix = Prefixo
 integration-citationDialog-details-suppressAuthor = Omitir autor
+integration-citationDialog-details-locator-info = Tip: You can also type page numbers and other locators directly into the main field. <a data-l10n-name="docs-link">Learn more</a>
 integration-citationDialog-details-includeComments = Incluir comentários
 integration-citationDialog-details-remove = { general-remove }
 integration-citationDialog-details-done =
@@ -45,8 +46,8 @@ integration-citationDialog-lib-message-citation =
     }
 integration-citationDialog-lib-message-add-note =
     { $search ->
-        [true] Nenhuma nota selecionada corresponde a busca
-       *[other] Nenhuma nota selecionada
+        [true] No selected or open notes match the current search
+       *[other] No selected or open notes
     }
 integration-citationDialog-lib-message-annotations =
     { $search ->
@@ -54,6 +55,9 @@ integration-citationDialog-lib-message-annotations =
        *[other] No selected or open items with annotations
     }
 integration-citationDialog-settings-keepSorted = Manter as fontes ordenadas
+integration-citationDialog-preview-error = Preview unavailable
+integration-citationDialog-btn-displayPreview =
+    .title = Display citation preview
 integration-citationDialog-btn-settings =
     .title = { general-open-settings }
 integration-citationDialog-mode-library = Biblioteca
@@ -76,6 +80,11 @@ integration-citationDialog-aria-bubble =
 integration-citationDialog-single-input-citation =
     .placeholder = { integration-citationDialog-search-for-items }
     .aria-description = Pressione Tab para selecionar itens e adicionar a esta citação. Pressione Escape para descartar as alterações e fechar a caixa.
+integration-citationDialog-just-added-input-placeholder = Type “10-15” to cite pages, or search for items
+integration-citationDialog-just-added-input-citation =
+    .placeholder = { $placeholder }
+    .title = { $title }
+    .aria-description = { integration-citationDialog-general-instructions }
 integration-citationDialog-input-citation =
     .placeholder = { integration-citationDialog-search-for-items }
     .aria-description = { integration-citationDialog-general-instructions }
@@ -91,16 +100,23 @@ integration-citationDialog-collections-table =
     .aria-label = Coleções.
     .aria-description = Selecione uma coleção e pressione Tab para navegar entre seus itens.
 integration-citationDialog-items-table =
+    .title = { integration-citationDialog-add-to-citation-tooltip }
     .aria-label = { integration-citationDialog-enter-to-add-item }
 integration-citationDialog-items-table-added =
+    .title = { integration-citationDialog-add-to-citation-tooltip }
     .aria-label = Este item foi adicionado a citação. Pressione { return-or-enter } para adicioná-lo novamente ou { delete-or-backspace } para removê-lo.
+integration-citationDialog-add-to-citation-tooltip =
+    { $count ->
+        [one] Add to Citation
+       *[other] Add { $count } Items to Citation
+    }
 integration-citationDialog-add-all = Adicionar tudo
 integration-citationDialog-collapse-section =
     .title = Comprimir seção
 integration-citationDialog-bubble-empty = (sem título)
 integration-citationDialog-add-to-citation = Adicionar citação
 integration-citationDialog-annotations-filter =
-    .placeholder = Filter annotations
+    .placeholder = Filtrar anotações
 integration-citationDialog-annotations-empty = Select an item, attachment, or annotation to view annotation details
 integration-prefs-displayAs-label = Exibir citações como:
 integration-prefs-footnotes =
@@ -131,8 +147,6 @@ integration-warning-documentPreferences-changes-will-be-lost = Você fez altera�
 integration-warning-discard-changes = Descartar alterações
 integration-warning-command-is-running = Um comando de integração de processador de texto já está em funcionamento.
 first-run-guidance-citationDialog =
-    Digite um título, autor e/ou ano para buscar por uma referência.
+    Click the bubble or use the ← and ↓ keys to view the citation details and customize options such as page number, prefix, and suffix.
     
-    Depois que tiver feito sua seleção, clique no balão e selecione pelo teclado e pressione ↓/Espaço para mostrar as opções de citação como número de página, prefixo e sufixo.
-    
-    Você também pode adicionar o número da página ou outro localizador ao incluir com os termos da busca (ex.: “história { $locator }”) ou digitando depois do balão e pressionando { return-or-enter }.
+    You can also add a page number or other locator by including it with your search terms (e.g., “history { $locator }”) or by typing it after the bubble and pressing { return-or-enter }.

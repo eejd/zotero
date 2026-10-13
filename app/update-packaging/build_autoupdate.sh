@@ -97,6 +97,8 @@ if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN == 0 ]] && [[ $BUILD_LINUX == 0 ]]; th
 	usage
 fi
 
+TO_MAJOR_VERSION="${TO%%.*}"
+
 rm -rf "$UPDATE_STAGE_DIR"
 mkdir "$UPDATE_STAGE_DIR"
 
@@ -157,15 +159,17 @@ for version in "$FROM" "$TO"; do
 		mkdir "$CACHE_DIR"
 	fi
 	
-	# Build archive list (no Linux arm64 for Zotero 7)
+	# Build archive list (no Linux arm64 before Zotero 8, no Linux i686 from Zotero 11)
 	ARCHIVES=(
 		"$MAC_ARCHIVE"
 		"$WIN32_ARCHIVE"
 		"$WIN_X64_ARCHIVE"
 		"$WIN_ARM64_ARCHIVE"
-		"$LINUX_X86_ARCHIVE"
 		"$LINUX_X86_64_ARCHIVE"
 	)
+	if [ "$TO_MAJOR_VERSION" -lt 11 ]; then
+		ARCHIVES+=("$LINUX_X86_ARCHIVE")
+	fi
 	if [ "$MAJOR_VERSION" -ge 8 ]; then
 		ARCHIVES+=("$LINUX_ARM64_ARCHIVE")
 	fi
@@ -211,10 +215,12 @@ for version in "$FROM" "$TO"; do
 		set +e
 		# Cached version is available
 		if [ -n "$ETAG" ]; then
-			NEW_ETAG=$(wget -nv -S --header "If-None-Match: $ETAG" $URL 2>&1 | awk '/ *ETag: */ {print $2}')
+			HTTP_CODE=$(curl -sS -L -D headers.txt -o $archive -w '%{http_code}' -H "If-None-Match: $ETAG" "$URL")
+			NEW_ETAG=$(awk 'tolower($1) == "etag:" {print $2}' headers.txt | tr -d '\r' | tail -n 1)
+			rm -f headers.txt
 			
 			# If ETag didn't match, cache newly downloaded version
-			if [ -f $archive ]; then
+			if [ "$HTTP_CODE" = 200 ]; then
 				echo "ETag for $archive didn't match! -- using new version"
 				rm -f "$CACHE_DIR/$archive.etag"
 				cp $archive "$CACHE_DIR/"
@@ -225,7 +231,9 @@ for version in "$FROM" "$TO"; do
 				cp "$CACHE_DIR/$archive" .
 			fi
 		else
-			NEW_ETAG=$(wget -nv -S $URL 2>&1 | awk '/ *ETag: */ {print $2}')
+			curl -sS -f -L -D headers.txt -o $archive "$URL"
+			NEW_ETAG=$(awk 'tolower($1) == "etag:" {print $2}' headers.txt | tr -d '\r' | tail -n 1)
+			rm -f headers.txt
 			
 			# Save archive to cache
 			rm -f "$CACHE_DIR/$archive.etag"
@@ -235,8 +243,13 @@ for version in "$FROM" "$TO"; do
 		set -e
 	done
 	
-	# Delete cached files older than 14 days
-	find "$CACHE_DIR" -ctime +14 -delete
+	# Delete cached archives older than 14 days
+	find "$CACHE_DIR" -maxdepth 1 -type f -ctime +14 -delete
+	# Delete cached diffs and compressed files not created or used in 60 days
+	# (cache hits touch the entries)
+	if [ -d "$CACHE_DIR/update-packaging" ]; then
+		find "$CACHE_DIR/update-packaging" -type f -ctime +60 -delete
+	fi
 	
 	# Unpack Zotero.app
 	if [ $BUILD_MAC == 1 ]; then
@@ -257,9 +270,14 @@ for version in "$FROM" "$TO"; do
 	# Unpack Windows zips
 	if [ $BUILD_WIN == 1 ]; then
 		if [[ -f "$WIN32_ARCHIVE" ]] && [[ -f "$WIN_X64_ARCHIVE" ]] && [[ -f "$WIN_ARM64_ARCHIVE" ]]; then
+			# Unpack architectures in parallel
+			UNPACK_PIDS=""
 			for build in "$WIN32_ARCHIVE" "$WIN_X64_ARCHIVE" "$WIN_ARM64_ARCHIVE"; do
-				unzip -q "$build"
-				rm "$build"
+				(unzip -q "$build" && rm "$build") &
+				UNPACK_PIDS="$UNPACK_PIDS $!"
+			done
+			for pid in $UNPACK_PIDS; do
+				wait $pid
 			done
 			INCREMENTALS_FOUND=1
 		else
@@ -269,8 +287,11 @@ for version in "$FROM" "$TO"; do
 	
 	# Unpack Linux tarballs
 	if [ $BUILD_LINUX == 1 ]; then
-		# Zotero 7 has no Linux arm64 build
-		LINUX_BUILDS_TO_UNPACK=("$LINUX_X86_ARCHIVE" "$LINUX_X86_64_ARCHIVE")
+		# Zotero 7 has no Linux arm64 build; Zotero 11 has no Linux i686 build
+		LINUX_BUILDS_TO_UNPACK=("$LINUX_X86_64_ARCHIVE")
+		if [ "$TO_MAJOR_VERSION" -lt 11 ]; then
+			LINUX_BUILDS_TO_UNPACK+=("$LINUX_X86_ARCHIVE")
+		fi
 		if [ "$MAJOR_VERSION" -ge 8 ]; then
 			LINUX_BUILDS_TO_UNPACK+=("$LINUX_ARM64_ARCHIVE")
 		fi
@@ -284,9 +305,14 @@ for version in "$FROM" "$TO"; do
 		done
 		
 		if [ "$MISSING" -eq 0 ]; then
+			# Unpack architectures in parallel
+			UNPACK_PIDS=""
 			for build in "${LINUX_BUILDS_TO_UNPACK[@]}"; do
-				tar -xf "$build"
-				rm "$build"
+				(tar -xf "$build" && rm "$build") &
+				UNPACK_PIDS="$UNPACK_PIDS $!"
+			done
+			for pid in $UNPACK_PIDS; do
+				wait $pid
 			done
 			INCREMENTALS_FOUND=1
 		else
@@ -301,10 +327,19 @@ done
 export MOZ_PRODUCT_VERSION="$TO"
 export MAR_CHANNEL_ID="$CHANNEL"
 
+# Reuse diffs and compressed files across incremental builds, since FROM
+# versions often share files with each other and with the TO version. Entries
+# that haven't been used recently are cleaned up above.
+export UPDATE_CACHE_DIR="$ROOT_DIR/cache/update-packaging"
+
 CHANGES_MADE=0
 for build in "mac" "win32" "win-x64" "win-arm64" "linux-i686" "linux-x86_64" "linux-arm64"; do
 	# Zotero 7 has no Linux arm64 builds
 	if [[ $build == "linux-arm64" ]] && [[ $FROM == 7.* ]]; then
+		continue
+	fi
+	# Zotero 11 has no Linux i686 builds, so there's nothing to update to
+	if [[ $build == "linux-i686" ]] && [[ $TO_MAJOR_VERSION -ge 11 ]]; then
 		continue
 	fi
 	if [[ $build == "mac" ]]; then

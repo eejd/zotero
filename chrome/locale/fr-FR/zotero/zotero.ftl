@@ -16,13 +16,19 @@ command-or-control =
     }
 return-or-enter =
     { PLATFORM() ->
-        [macos] Return
-       *[other] Enter
+        [macos] Retour
+       *[other] Entrée
     }
 delete-or-backspace =
     { PLATFORM() ->
-        [macos] Delete
-       *[other] Backspace
+        [macos] Supprimer
+       *[other] Supprimer
+    }
+-os-name =
+    { PLATFORM() ->
+        [macos] macOS
+        [windows] Windows
+       *[other] Linux
     }
 general-print = Imprimer
 general-remove = Supprimer
@@ -40,12 +46,17 @@ general-view-troubleshooting-instructions = Afficher les instructions de dépann
 general-go-back = Revenir en arrière
 general-accept = Accepter
 general-cancel = Annuler
+cancel-button =
+    .label = { general-cancel }
 general-show-in-library = Montrer dans la bibliothèque
 general-restartApp = Redémarrer { -app-name }
 general-restartInTroubleshootingMode = Redémarrer en mode dépannage
 general-save = Enregistrer
 general-clear = Effacer
+clear-button =
+    .label = { general-clear }
 general-update = Mettre à jour
+general-reset-to-default = Rétablir les valeurs par défaut
 general-back = Page précédente
 general-edit = Modifier
 general-cut = Couper
@@ -63,6 +74,9 @@ general-more-information = Plus d'informations
 general-warning = Avertissement
 general-type-to-continue = Tapez “{ $text }” pour continuer.
 general-continue = Continuer
+general-allow = Autoriser
+general-always-allow = Toujours autoriser
+general-deny = Refuser
 general-red = Rouge
 general-orange = Orange
 general-yellow = Jaune
@@ -76,6 +90,8 @@ general-maroon = Bordeaux
 general-gray = Gris
 general-black = Noir
 general-loading = Chargement...
+db-checking-integrity = Vérification de l'intégrité de la base de données...
+db-repairing = Réparation de la base de données...
 citation-style-label = Style de citation :
 language-label = Langue :
 menu-custom-group-submenu =
@@ -163,14 +179,130 @@ collections-menu-show-recently-read =
     .label = Afficher { recently-read }
 item-menu-remove-from-recently-read =
     .label = Retirer de { recently-read }…
-collections-menu-rename-collection =
-    .label = Renommer la collection
-collections-menu-edit-saved-search =
-    .label = Modifier la recherche enregistrée
+collections-menu-clear-all-last-read =
+    .label = Effacer toutes les dates de dernière lecture...
+recently-read-clear-all-confirm = Toutes les dates de dernière lecture de cette bibliothèque vont être effacées.
+items-list-load-error-plugin = Error loading items list. Disabling the “{ $plugin }” plugin and restarting { -app-name } may fix this.
+items-section-collections-selected =
+    { $count ->
+        [one] { $count } collection sélectionnée
+        [many] { $count } collections sélectionnées
+       *[other] { $count } collections sélectionnées
+    }
+items-section-searches-selected =
+    { $count ->
+        [one] { $count } recherche enregistrée sélectionnée
+        [many] { $count }  recherches enregistrées sélectionnées
+       *[other] { $count }  recherches enregistrées sélectionnées
+    }
+items-section-sources-selected =
+    { $count ->
+        [one] { $count } source sélectionnée
+        [many] { $count } sources sélectionnées
+       *[other] { $count } sources sélectionnées
+    }
+items-section-library-collections =
+    { $count ->
+        [one] { $library } ({ $count } collection sélectionnée)
+        [many] { $library } ({ $count } collections sélectionnées)
+       *[other] { $library } ({ $count } collections sélectionnées)
+    }
+items-section-library-searches =
+    { $count ->
+        [one] { $library } ({ $count }  recherche enregistrée sélectionnée)
+        [many] { $library } ({ $count }  recherches enregistrées sélectionnées)
+       *[other] { $library } ({ $count }  recherches enregistrées sélectionnées)
+    }
+items-section-library-sources =
+    { $count ->
+        [one] { $library } ({ $count } source sélectionnée)
+        [many] { $library } ({ $count } sources sélectionnées)
+       *[other] { $library } ({ $count } sources sélectionnées)
+    }
+items-section-library-recently-read = { $library } ({ recently-read })
+items-section-library = { $library }
+collections-menu-rename =
+    .label = Renommer
+edit-saved-search = Modifier la recherche enregistrée
+collections-menu-edit-search =
+    .label = Modifier la recherche
+collections-menu-duplicate-search =
+    .label = Dupliquer la recherche
 collections-menu-move-collection =
     .label = Déplacer vers
 collections-menu-copy-collection =
     .label = Copier vers
+collections-menu-export =
+    .label = Exporter…
+collections-menu-generate-report =
+    .label = Établir un rapport...
+collections-menu-create-bibliography =
+    .label = Créer une bibliographie…
+collections-menu-unsubscribe =
+    .label = Se désabonner...
+collections-menu-delete =
+    .label =
+        { $count ->
+            [one] Supprimer la collection…
+            [many] Supprimer les collections…
+           *[other] Supprimer les collections…
+        }
+collections-menu-delete-with-items =
+    .label =
+        { $count ->
+            [one] Supprimer la collection et ses documents…
+            [many] Supprimer les collections et leurs documents…
+           *[other] Supprimer les collections et leurs documents…
+        }
+collections-menu-delete-search =
+    .label =
+        { $count ->
+            [one] Supprimer la recherche...
+            [many] Supprimer les recherches...
+           *[other] Supprimer les recherches...
+        }
+collections-delete-title =
+    { $count ->
+        [one] Supprimer la collection
+        [many] Supprimer les collections
+       *[other] Supprimer les collections
+    }
+collections-delete-message =
+    { $count ->
+        [one] Voulez-vous vraiment supprimer cette collection ?
+        [many] Voulez-vous vraiment supprimer { $count } collections ?
+       *[other] Voulez-vous vraiment supprimer { $count } collections ?
+    }
+collections-delete-keep-items =
+    { $count ->
+        [one] Les documents contenus dans cette collection ne seront pas supprimés.
+        [many] Les documents contenus dans ces collections ne seront pas supprimés.
+       *[other] Les documents contenus dans ces collections ne seront pas supprimés.
+    }
+collections-delete-with-items-title =
+    { $count ->
+        [one] Supprimer la collection et ses documents
+        [many] Supprimer les collections et leurs documents
+       *[other] Supprimer les collections et leurs documents
+    }
+collections-delete-with-items-message =
+    { $count ->
+        [one] Voulez-vous vraiment supprimer cette collection et déplacer tous les documents qu'elle contient vers la Corbeille?
+        [many] Voulez-vous vraiment supprimer { $count } collections et déplacer tous les documents qu'elles contiennent vers la Corbeille?
+       *[other] Voulez-vous vraiment supprimer { $count } collections et déplacer tous les documents qu'elles contiennent vers la Corbeille?
+    }
+collections-delete-search-title =
+    { $count ->
+        [one] Supprimer la recherche
+        [many] Supprimer les recherches
+       *[other] Supprimer les recherches
+    }
+collections-delete-search-message =
+    { $count ->
+        [one] Voulez-vous vraiment supprimer cette recherche ?
+        [many] Voulez-vous vraiment supprimer { $count } recherches ?
+       *[other] Voulez-vous vraiment supprimer { $count } recherches ?
+    }
 item-creator-moveDown =
     .label = Descendre
 item-creator-moveToTop =
@@ -217,6 +349,7 @@ item-menu-option-view-online =
 item-button-view-online =
     .tooltiptext = { view-online }
 file-renaming-file-renamed-to = Fichier renommé en { $filename }
+file-access-error-fs-corrupted = { -os-name } reported that the file or disk is corrupted. Run a disk check on the drive containing the file.
 itembox-button-options =
     .tooltiptext = Ouvrir le menu contextuel
 itembox-button-merge =
@@ -272,7 +405,9 @@ file-interface-items-were-relinked =
         [one] Un lien rétabli
        *[other] { $numRelinked } liens rétablis
     }
-import-mendeley-encrypted = La base de données Mendeley sélectionnée n'est pas lisible, peut-être parce qu'elle est chiffrée. Voir <a data-l10n-name="mendeley-import-kb">Comment importer une bibliothèque Mendeley dans Zotero ?</a> pour plus d'informations.
+import-mendeley-cannot-decrypt = The selected Mendeley database could not be decrypted. This can happen if the database file has been renamed. See <a data-l10n-name="mendeley-import-kb">How do I import a Mendeley library into Zotero?</a> for more information.
+import-mendeley-unsupported = The selected file does not appear to be a Mendeley database. See <a data-l10n-name="mendeley-import-kb">How do I import a Mendeley library into Zotero?</a> for more information.
+import-mendeley-db-in-use = The selected Mendeley database is in use. Please quit Mendeley Desktop and try again.
 file-interface-import-error-translator = Une erreur s'est produite pendant l'importation du fichier sélectionné par  “{ $translator }”. Assurez-vous que le fichier est valide et réessayez.
 import-online-intro = A l'étape suivante, il vous sera demandé de vous connecter à { $targetAppOnline } et d'y donner accès à { -app-name }. Cette autorisation est nécessaire pour importer votre bibliothèque { $targetApp } dans { -app-name }.
 import-online-intro2 = { -app-name } ne verra ni n'enregistrera jamais votre mot de passe { $targetApp }.
@@ -283,6 +418,7 @@ import-online-relink-only =
     .label = Lier à nouveau les citations de Mendeley Desktop
 import-online-relink-kb = { general-more-information }
 import-online-connection-error = { -app-name } n'a pas pu se connecter à { $targetApp }. Veuillez vérifier votre connexion Internet et réessayer.
+tab-title-multiple-collections = Multiples
 items-table-cell-notes =
     .aria-label =
         { $count ->
@@ -368,6 +504,7 @@ styleEditor-editor =
     .aria-label = Éditeur de style
 styleEditor-preview =
     .aria-label = Aperçu
+stylePreview-generating = Génération des aperçus...
 publications-intro-page = Mes publications
 publications-intro = Les documents que vous ajoutez dans Mes publications seront publiés dans votre profil sur zotero.org. Si vous choisissez d'inclure des fichiers attachés, ces derniers seront rendus publics sous la licence que vous spécifiez. N'ajoutez que des travaux que vous avez créés vous-mêmes et n'ajoutez des fichiers que si vous avez le droit de les distribuer publiquement et seulement si vous le souhaitez.
 publications-include-checkbox-files =
@@ -628,6 +765,18 @@ quicksearch-input =
     .aria-label = Recherche rapide
     .placeholder = { $placeholder }
     .aria-description = { $placeholder }
+advanced-search = Recherche avancée
+menuitem-advanced-search =
+    .label = { advanced-search }
+quicksearch-advanced-search-button =
+    .tooltiptext = { advanced-search }
+    .aria-label = { advanced-search }
+advanced-search-close =
+    .tooltiptext = Fermer la recherche avancée
+advanced-search-expand =
+    .tooltiptext = Développer la recherche avancée
+advanced-search-collapse =
+    .tooltiptext = Compacter la recherche avancée
 item-pane-header-view-as =
     .label = Voir en tant que
 item-pane-header-none =
@@ -691,9 +840,64 @@ architecture-x64-on-arm64-action = Télécharger { -app-name } pour ARM64
 first-run-guidance-authorMenu = { -app-name } vous permet aussi d'indiquer des éditeurs et des traducteurs. Vous pouvez changer un auteur en éditeur ou en traducteur par une sélection dans ce menu.
 first-run-guidance-readAloud = { -app-name } peut désormais vous lire vos documents à haute voix en utilisant des voix au son naturel.
 advanced-search-remove-btn =
-    .tooltiptext = { general-remove }
+    .tooltiptext = Supprimer la condition
 advanced-search-add-btn =
-    .tooltiptext = { general-add }
+    .tooltiptext = Ajouter une condition
+advanced-search-group-btn =
+    .tooltiptext = Ajouter un groupe de conditions
+advanced-search-remove-group-btn =
+    .tooltiptext = Supprimer le groupe
+advanced-search-ungroup-btn =
+    .tooltiptext = Dégrouper les conditions
+advanced-search-result-level-menu =
+    .aria-label = Type de résultats
+advanced-search-result-level-prefix-root =
+    .value = Rechercher
+advanced-search-join-prefix-root =
+    .value = correspondant à
+advanced-search-result-level-any =
+    .label = tous les documents
+advanced-search-result-level-item =
+    .label = documents de niveau supérieur
+advanced-search-result-level-attachment =
+    .label = fichiers joints
+advanced-search-result-level-note =
+    .label = notes
+advanced-search-result-level-annotation =
+    .label = annotations
+advanced-search-binding-menu =
+    .aria-label = Correspondre au même document
+advanced-search-binding-separate =
+    .label = séparément
+advanced-search-binding-same-attachment =
+    .label = dans le même fichier joint
+advanced-search-binding-same-note =
+    .label = dans la même note
+advanced-search-binding-same-annotation =
+    .label = dans la même annotation
+advanced-search-of-the-following =
+    .value = condition(s) suivante(s)
+advanced-search-binding-hint-attachment =
+    .value = Ces conditions peuvent correspondre à des fichiers joints distincts.
+advanced-search-binding-hint-note =
+    .value = Ces conditions peuvent correspondre à des notes distinctes.
+advanced-search-binding-hint-annotation =
+    .value = Ces conditions peuvent correspondre à des annotations distinctes.
+advanced-search-level-warning-mixed = Ces conditions ne peuvent pas toutes correspondre au même document, cette recherche ne trouvera donc jamais aucun résultat. Essayez de faire correspondre “{ $matchAny }” de ces conditions, ou choisissez le type de résultat “{ $topLevelItems }”.
+advanced-search-level-warning-unreachable = Cette recherche contient une condition incompatible avec le type de résultat choisi. Sélectionnez le type de résultat “{ $topLevelItems }” ou supprimez la condition incompatible.
+advanced-search-group-warning-unreachable =
+    Une condition à cet endroit ne peut pas correspondre à la même { $entity ->
+        [attachment] pièce jointe
+        [note] note
+       *[annotation] annotation
+    }. Faites-les correspondre séparément ou supprimez la condition incompatible.
+advanced-search-group-warning-mixed = Ces conditions ne peuvent pas toutes correspondre au même document, ce groupe ne trouvera donc jamais aucun résultat. Essayez de faire correspondre “{ $matchAny }” de ces conditions, ou choisissez le type de résultat “{ $topLevelItems }”.
+advanced-search-bind-same-attachment =
+    .label = Correspondre au même fichier joint
+advanced-search-bind-same-note =
+    .label = Correspondre à la même note.
+advanced-search-bind-same-annotation =
+    .label = Correspondre à la même annotation
 advanced-search-conditions-menu =
     .aria-label = Condition de recherche
     .label = { $label }
@@ -703,11 +907,46 @@ advanced-search-operators-menu =
 advanced-search-condition-input =
     .aria-label = Valeur
     .label = { $label }
+search-operator-isEmpty = est vide
+search-operator-isNotEmpty = n'est pas vide
 search-conditions-tooltip-fields = Champs :
 search-conditions-collection = Collection (de Zotero)
 search-conditions-savedSearch = Recherche enregistrée
 search-conditions-itemTypeID = Type de document
+search-query-keyword-creator = by
+search-query-keyword-publication = in, publication, journal
+search-query-keyword-item-type = type
+search-query-keyword-language = lang
+search-query-keyword-abstract = abstract
+search-query-keyword-fulltext = fulltext, text
+search-query-keyword-date = year
+search-query-keyword-date-before = before
+search-query-keyword-date-after = after, since
+search-query-keyword-date-added = added
+search-query-keyword-date-modified = modified
+search-query-keyword-no-annotations = no annotations
+search-query-keyword-has-annotations = has annotations
+search-query-keyword-no-notes = no notes
+search-query-keyword-has-notes = has notes
+search-query-keyword-no-tags = no tags
+search-query-keyword-has-tags = has tags
+search-query-keyword-no-attachments = no attachments
+search-query-keyword-has-attachments = has attachments
+search-query-keyword-and = and
+search-query-keyword-or = or
+search-query-keyword-no = no
+search-query-keyword-has = has
+search-query-keyword-days = day, days
+search-query-keyword-weeks = week, weeks
+search-query-keyword-months = month, months
+search-query-keyword-years = year, years
+search-query-keyword-range = between 2020 and 2025, from 2020 to 2025, 2020 to 2025
+search-query-keyword-range-excluded = not between 2020 and 2025
 search-conditions-tag = Marqueur
+search-conditions-numTags = # de marqueurs
+search-conditions-numNotes = # de notes
+search-conditions-numAttachments = # de pièces jointes
+search-conditions-numAnnotations = # d'annotations
 search-conditions-note = Note
 search-conditions-childNote = Note fille
 search-conditions-creator = Créateur
@@ -726,10 +965,26 @@ search-conditions-dateModified = Date de modification
 search-conditions-fulltextContent = Contenu de la pièce jointe
 search-conditions-programmingLanguage = Langage de programmation
 search-conditions-fileTypeID = Type de fichier joint
+search-conditions-attachmentStorageType = Type de stockage
 search-conditions-lastRead = Dernière pièce jointe lue
 search-conditions-annotationText = Texte de l'annotation
 search-conditions-annotationComment = Commentaire de l'annotation
+search-conditions-annotationType = Type d'annotation
+search-conditions-annotationColor = Couleur d'annotation
+search-conditions-annotationAuthor = Auteur de l'annotation
 search-conditions-anyField = N’importe quel champ
+search-conditions-titleCreatorYear = Titre, Créateur, Année
+search-conditions-submenu-attachment = Pièce jointe
+search-conditions-submenu-annotation = Annotation
+search-conditions-short-fulltextContent = Contenu
+search-conditions-short-fileTypeID = Type de fichier
+search-conditions-short-attachmentStorageType = Type de stockage
+search-conditions-short-lastRead = Dernière lecture
+search-conditions-short-annotationText = Texte
+search-conditions-short-annotationComment = Commentaire
+search-conditions-short-annotationType = Type
+search-conditions-short-annotationColor = Couleur
+search-conditions-short-annotationAuthor = Auteur
 find-pdf-files-added =
     { $count ->
         [one] { $count } fichier ajouté
@@ -764,6 +1019,9 @@ file-type-video = Vidéo
 file-type-presentation = Présentation
 file-type-document = Document
 file-type-ebook = Livre numérique
+attachment-storage-type-storedFile = Fichier joint
+attachment-storage-type-linkedFile = Fichier lié
+attachment-storage-type-webLink = Lien Web
 post-upgrade-message = Vous avez été mis à niveau vers <span data-l10n-name="post-upgrade-appver">{ -app-name } { $version }</span>! Découvrez <a data-l10n-name="new-features-link">les nouveautés</a>.
 post-upgrade-remind-me-later =
     .label = { general-remind-me-later }
@@ -772,18 +1030,25 @@ post-upgrade-done =
 text-action-paste-and-search =
     .label = Coller et rechercher
 mac-word-plugin-install-message = Zotero doit avoir accès aux données de Word pour installer l'extension Word.
+mac-word-plugin-install-folder-message = { -app-name } a besoin d'accéder au dossier de démarrage de Word pour installer l'extension Word.
 mac-word-plugin-install-action-button =
     .label = Installer l'extension Word
 mac-word-plugin-install-remind-later-button =
     .label = { general-remind-me-later }
 mac-word-plugin-install-dont-ask-again-button =
     .label = { general-dont-ask-again }
+mac-word-plugin-install-folder-dialog-title = Installez l'extension dans le dossier de démarrage de Word
+mac-word-plugin-install-folder-dialog-button = Installer
+mac-word-plugin-install-wrong-folder-selected = Le dossier proposé doit être sélectionné. Veuillez réessayer sans choisir un autre dossier.
 file-renaming-banner-message = { -app-name } synchronise désormais automatiquement les noms des fichiers joints lorsque vous modifiez des documents.
 file-renaming-banner-documentation-link = { general-learn-more }
 file-renaming-banner-settings-link = { general-settings }
 connector-version-warning = Le connecteur { -app-name } doit être mis à jour pour fonctionner avec cette version de { -app-name }.
 userjs-pref-warning = Certains paramètres de { -app-name } ont été modifiés à l'aide d'une méthode non prise en charge. { -app-name } va les rétablir et redémarrer.
+migrate-extra-fields-progress-headline = Mise à jour des documents...
 migrate-extra-fields-progress-message = Migration des nouveaux champs depuis le champ Extra
+fulltext-indexing-progress-title = Indexation
+fulltext-indexing-progress-message = Les résultats de la recherche dans le texte intégral peuvent être incomplets tant que l'indextion n'est pas finie.
 long-tag-fixer-window-title =
     .title = Scinder les marqueurs
 long-tag-fixer-button-dont-split =
@@ -796,4 +1061,177 @@ banner-close-button =
     .aria-label = Ignorer la notification
 plugins-blocked-plugin =
     .message = Cette extension a été désactivée par { -app-name }.
-data-dir-unsupported-storage = This can happen if the { -app-name } data directory is in a cloud storage folder (OneDrive, Dropbox, etc.) or on a network share.
+data-dir-unsupported-storage = Cela peut se produire si le répertoire de données de { -app-name } se trouve dans un dossier de stockage en nuage (OneDrive, Dropbox, etc.) ou sur un partage réseau.
+data-dir-check-parent-write-access = Make sure you have write access to { $path } and that security software isn’t preventing { -app-name } from writing to the disk.
+login-manager-reset = { -app-name } n'a pas pu lire vos informations de connexion enregistrées, elles ont donc été réinitialisées. Veuillez vous ré-identifier dans le panneau { preferences-pane-account } des préférences de { -app-name }.
+login-manager-open-profile-directory = Open Profile Directory
+os-keystore-save-failed =
+    { PLATFORM() ->
+        [macos] { -app-name } n'a pas pu accéder à la Keychain de { -os-name } pour enregistrer vos informations de connexion en toute sécurité. Assurez-vous que votre Keychain est accessible et essayez à nouveau.
+        [windows] { -app-name } n'a pas pu utiliser le Gestionnaire d’informations d’identification de { -os-name } pour enregistrer vos informations de connexion en toute sécurité. Essayez à nouveau ou redémarrez { -app-name }.
+       *[other] { -app-name } n'a pas pu accéder à l'outil de gestion des clés de { -os-name } pour enregistrer vos informations de connexion en toute sécurité. Assurez-vous qu'un service comme le Trousseau de clés GNOME ou KWallet est en cours d'exécution et essayez à nouveau.
+    }
+os-keystore-read-failed =
+    { PLATFORM() ->
+        [macos] { -app-name } n'a pas pu accéder à la Keychain de { -os-name } pour lire vos informations de connexion enregistrées. Assurez-vous que votre Keychain est accessible et essayez à nouveau.
+        [windows] { -app-name } n'a pas pu utiliser le Gestionnaire d’informations d’identification de { -os-name } pour lire vos informations de connexion enregistrées. Essayez à nouveau ou redémarrez { -app-name }.
+       *[other] { -app-name } n'a pas pu accéder à l'outil de gestion des clés de { -os-name } pour lire vos informations de connexion enregistrées. Assurez-vous qu'un service comme le Trousseau de clés GNOME ou KWallet est en cours d'exécution et essayez à nouveau.
+    }
+os-keystore-read-unrecoverable =
+    { PLATFORM() ->
+        [macos] { -app-name } couldn’t read your saved credentials from the { -os-name } Keychain.
+        [windows] { -app-name } couldn’t read your saved credentials from { -os-name } Credential Manager.
+       *[other] { -app-name } couldn’t read your saved credentials from your { -os-name } keyring.
+    } You’ll need to set up syncing again in the { -app-name } settings.
+os-keystore-save-unencrypted = { -app-name } peut enregistrer vos informations de connexion sous forme non-chiffrée à la place. Toute personne ayant accès au dossier de votre profil { -app-name } pourrait alors les lire.
+os-keystore-save-unencrypted-button = Enregistrer quand même
+os-keystore-migrate-failed =
+    { PLATFORM() ->
+        [macos] { -app-name } n'a pas pu accéder à la Keychain de { -os-name } pour chiffrer vos informations de connexion. Vos informations de connexion restent enregistrées en clair sur le disque. Assurez-vous que votre Keychain est accessible et redémarrez { -app-name }.
+        [windows] { -app-name } n'a pas pu chiffrer vos informations de connexion. Vos informations de connexion restent enregistrées en clair sur le disque. Redémarrez { -app-name } et essayez à nouveau.
+       *[other] { -app-name } n'a pas pu accéder à l'outil de gestion des clés de { -os-name } pour chiffrer vos informations de connexion. Vos informations de connexion restent enregistrées en clair sur le disque. Assurez-vous qu'un service comme le Trousseau de clés GNOME ou KWallet est en cours d'exécution et redémarrez { -app-name }.
+    }
+search-button =
+    .label = Rechercher
+save-search-new-button =
+    .label = Enregistrer la recherche...
+save-search-edit-button =
+    .label = Enregistrer
+save-search-name-title = Enregistrer la recherche
+save-search-name-message = Saisissez un nom pour la recherche enregistrée :
+saved-search-close-confirmation-title = Modification de la recherche enregistrée
+saved-search-close-confirmation-body = Souhaitez-vous enregistrer les modifications que vous avez apportées à cette recherche enregistrée ?
+item-pane-batch-editing-prompt =
+    .aria-label = Modification groupée
+item-pane-batch-editing-enable =
+    .label = Modifier plusieurs documents...
+item-pane-batch-editing-multiple-values-placeholder = Multiples valeurs
+item-pane-batch-editing-clear-values = Effacer toutes les valeurs
+item-pane-batch-editing-header =
+    { $count ->
+        [one] Edition de { $count } document
+        [many] Edition de { $count } documents
+       *[other] Edition de { $count } documents
+    }
+item-pane-batch-editing-done =
+    .label = { general-done }
+undo-action-edit-metadata =
+    { $count ->
+        [one] Modifier les métadonnées
+        [many] Modifier les métadonnées pour { $count } documents
+       *[other] Modifier les métadonnées pour { $count } documents
+    }
+undo-action-edit-field =
+    { $count ->
+        [one] Ediion du champ “{ $field }”
+        [many] Edition du champ “{ $field }” pour { $count } documents
+       *[other] Edition du champ “{ $field }” pour { $count } documents
+    }
+undo-action-normalize-attachment-titles = Normaliser le titre de la pièce jointe
+undo-action-trash =
+    { $count ->
+        [one] Mettre à la corbeille le document
+        [many] Mettre à la corbeille { $count } documents
+       *[other] Mettre à la corbeille { $count } documents
+    }
+undo-action-restore-items =
+    { $count ->
+        [one] Restaurer le document
+        [many] Restaurer { $count } documents
+       *[other] Restaurer { $count } documents
+    }
+undo-action-trash-collection =
+    { $count ->
+        [one] Mettre à la corbeille la collection
+        [many] Mettre à la corbeille { $count } collections
+       *[other] Mettre à la corbeille { $count } collections
+    }
+undo-action-trash-search =
+    { $count ->
+        [one] Mettre à la corbeille la recherche enregistrée
+        [many] Mettre à la corbeille { $count } recherches enregistrées
+       *[other] Mettre à la corbeille { $count } recherches enregistrées
+    }
+undo-action-restore-collection =
+    { $count ->
+        [one] Restaurer la collection
+        [many] Restaurer { $count } collections
+       *[other] Restaurer { $count } collections
+    }
+undo-action-restore-objects =
+    { $count ->
+        [one] Restaurer l'objet
+        [many] Restaurer { $count } objets
+       *[other] Restaurer { $count } objets
+    }
+undo-action-add-to-collection =
+    { $count ->
+        [one] Ajouter à la collection
+        [many] Ajouter { $count } documents à la collection
+       *[other] Ajouter { $count } documents à la collection
+    }
+undo-action-remove-from-collection =
+    { $count ->
+        [one] Retirer de la collection
+        [many] Retirer { $count } documents de la collection
+       *[other] Retirer { $count } documents de la collection
+    }
+undo-action-move-to-collection =
+    { $count ->
+        [one] Déplacer vers la collection
+        [many] Déplacer { $count } documents vers la collection.
+       *[other] Déplacer { $count } documents vers la collection.
+    }
+undo-action-rename-collection = Renommer la collection
+undo-action-move-collection = Déplacer la collection
+undo-action-add-tag =
+    { $count ->
+        [one] Ajouter le marqueur
+        [many] Ajouter le marqueur à { $count } documents
+       *[other] Ajouter le marqueur à { $count } documents
+    }
+undo-action-change-tag = Changer le marqueur
+undo-action-split-tag = Scinder le marqueur
+undo-action-remove-tag =
+    { $count ->
+        [one] Retirer le marqueur
+        [many] Retirer le marqueur de { $count } documents
+       *[other] Retirer le marqueur de { $count } documents
+    }
+undo-action-remove-tags-from-item =
+    { $count ->
+        [one] Retirer le marqueur
+        [many] Retirer { $count } marqueurs
+       *[other] Retirer { $count } marqueurs
+    }
+undo-action-remove-all-tags = Retirer tous les marqueurs
+undo-action-edit-note = Modifier la note
+undo-action-add-creator = Ajouter un auteur
+undo-action-remove-creator = Supprimer un auteur
+undo-action-edit-creator = Editer un auteur
+undo-action-reorder-creator = Changer l'ordre des créateurs
+undo-action-change-type = Changer le type du document
+undo-action-change-parent-item =
+    { $count ->
+        [one] Changer le document parent
+        [many] Changer le document parent pour { $count } documents
+       *[other] Changer le document parent pour { $count } documents
+    }
+undo-action-convert-to-standalone =
+    { $count ->
+        [one] Convertir en document indépendant
+        [many] Convertir { $count } éléments en document indépendants
+       *[other] Convertir { $count } éléments en documents indépendants
+    }
+undo-action-add-related = Définir une relation connexe
+undo-action-remove-related = Annuler une relation connexe
+undo-action-merge-items =
+    { $count ->
+        [one] Fusionner le document
+        [many] Fusionner { $count } documents
+       *[other] Fusionner { $count } documents
+    }
+menu-edit-undo-action = Annuler { $action }
+menu-edit-redo-action = Répéter { $action }
+local-api-authorize-title = Autorisation de l'API locale
+local-api-authorize-text = “{ $appName }”, une application qui s'exécute sur votre ordinateur, veut modifier votre bibliothèque { -app-name }.

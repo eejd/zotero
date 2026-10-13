@@ -48,7 +48,7 @@ describe("Tag Selector", function () {
 		tagSelector.selectedTags = new Set();
 		tagSelector.handleSearch('');
 		tagSelector.onItemViewChanged({
-			collectionTreeRow: win.ZoteroPane.getCollectionTreeRow(),
+			collectionTreeRows: win.ZoteroPane.getCollectionTreeRows(),
 			libraryID
 		});
 		await waitForTagSelector(win);
@@ -86,15 +86,78 @@ describe("Tag Selector", function () {
 		}]);
 		var item2 = createUnsavedDataObject('item', { collections: [collection.id] });
 		item2.setTags(["A", "B"]);	
-		var promise = waitForTagSelector(win);
 		await Zotero.DB.executeTransaction(async function () {
 			await item1.save();
 			await item2.save();
 		});
-		await promise;
+		await waitForCallback(() => getRegularTags().length == 2, 50, 5);
 		
-		var tags = getRegularTags();
-		assert.sameMembers(tags, ['A', 'B']);
+		assert.sameMembers(getRegularTags(), ['A', 'B']);
+	});
+	
+	it("should show a manual tag when automatic tags are hidden and an automatic tag has the same name", async function () {
+		var collection = await createDataObject('collection');
+		var item1 = createUnsavedDataObject('item', { collections: [collection.id] });
+		item1.setTags([{ tag: "A", type: 1 }]);
+		var item2 = createUnsavedDataObject('item', { collections: [collection.id] });
+		item2.setTags(["A"]);
+		await Zotero.DB.executeTransaction(async function () {
+			await item1.save();
+			await item2.save();
+		});
+		var emptyCollection = await createDataObject('collection');
+		await select(win, emptyCollection);
+		await waitForCallback(() => !tagSelector.state.tags.length);
+		
+		// Same-name tags come back in no particular order, so return the automatic one first
+		var getAllWithin = Zotero.Tags.getAllWithin;
+		var stub = sinon.stub(Zotero.Tags, 'getAllWithin').callsFake(async function (...args) {
+			let tags = await getAllWithin.apply(this, args);
+			return tags.sort((a, b) => b.type - a.type);
+		});
+		tagSelector.toggleShowAutomatic(false);
+		try {
+			await select(win, collection);
+			await waitForCallback(() => tagSelector.state.tags.length);
+			assert.sameMembers(getRegularTags(), ['A']);
+		}
+		finally {
+			stub.restore();
+			tagSelector.toggleShowAutomatic(true);
+		}
+	});
+	
+	it("should hide a tag that's only automatic in the new view when automatic tags are hidden", async function () {
+		var collection1 = await createDataObject('collection');
+		var collection2 = await createDataObject('collection');
+		var item1 = createUnsavedDataObject('item', { collections: [collection1.id] });
+		item1.setTags(["A", "B"]);
+		var item2 = createUnsavedDataObject('item', { collections: [collection2.id] });
+		item2.setTags([{ tag: "A", type: 1 }, "B"]);
+		await Zotero.DB.executeTransaction(async function () {
+			await item1.save();
+			await item2.save();
+		});
+		
+		tagSelector.toggleShowAutomatic(false);
+		try {
+			await select(win, collection1);
+			await waitForCallback(() => getRegularTags().length == 2);
+			
+			var spy = sinon.spy(tagSelector, 'onItemViewChanged');
+			try {
+				await select(win, collection2);
+				await waitForCallback(() => spy.called);
+				await spy.lastCall.returnValue;
+			}
+			finally {
+				spy.restore();
+			}
+			assert.sameMembers(getRegularTags(), ['B']);
+		}
+		finally {
+			tagSelector.toggleShowAutomatic(true);
+		}
 	});
 	
 	it("should show tags from annotations for attachments in scope", async function () {
@@ -134,7 +197,29 @@ describe("Tag Selector", function () {
 
 			tagSelector.handleSearch('');
 			await Zotero.Promise.delay(500);
-			
+
+			await item.eraseTx();
+		});
+
+		it("should match accented tags from an unaccented search term", async function () {
+			var collection = await createDataObject('collection');
+			await select(win, collection);
+			var item = createUnsavedDataObject('item', { collections: [collection.id] });
+			item.setTags(['résumé', 'other']);
+			var promise = waitForTagSelector(win);
+			await item.saveTx();
+			await promise;
+
+			promise = waitForTagSelector(win);
+			tagSelector.handleSearch('resume');
+			await promise;
+
+			assert.sameMembers(getRegularTags(), ['résumé']);
+
+			promise = waitForTagSelector(win);
+			tagSelector.handleSearch('');
+			await promise;
+
 			await item.eraseTx();
 		});
 	});
@@ -197,13 +282,14 @@ describe("Tag Selector", function () {
 			item2.setTags([tag2]);
 			var item3 = createUnsavedDataObject('item', { collections: [collection.id] });
 			item3.setTags([tag3]);
-			var promise = waitForTagSelector(win);
 			await Zotero.DB.executeTransaction(async function () {
 				await item1.save();
 				await item2.save();
 				await item3.save();
 			});
-			await promise;
+			await waitForCallback(
+				() => [tag1, tag2, tag3].every(tag => getRegularTags().includes(tag)), 50, 5
+			);
 			
 			var tags = getRegularTags();
 			assert.includeMembers(tags, [tag1, tag2, tag3]);
@@ -432,14 +518,10 @@ describe("Tag Selector", function () {
 		})
 		
 		it("should show a colored tag at the top of the list even when linked to no items", async function () {
-			var tagElems = tagSelectorElem.querySelectorAll('.tag-selector-item');
-			var count = tagElems.length;
-
 			await Zotero.Tags.setColor(libraryID, "Top", '#AAAAAA');
-			await waitForTagSelector(win);
+			await waitForCallback(() => getColoredTags().includes("Top"), 50, 5);
 
-			tagElems = tagSelectorElem.querySelectorAll('.tag-selector-item');
-			assert.equal(tagElems.length, count + 1);
+			assert.equal(tagSelectorElem.querySelector('.tag-selector-item').textContent, "Top");
 		});
 		
 		it("shouldn't re-insert a new tag that matches an existing color", async function () {
@@ -783,12 +865,134 @@ describe("Tag Selector", function () {
 		});
 	});
 
+	describe("Cross-library selection", function () {
+		var group, groupLibraryID;
+		
+		before(async function () {
+			group = await createGroup();
+			groupLibraryID = group.libraryID;
+			await collectionsView.expandLibrary(groupLibraryID);
+		});
+		
+		after(async function () {
+			await group.eraseTx();
+		});
+		
+		async function selectCrossLibrary(userCollection, groupCollection) {
+			let cv = collectionsView;
+			await cv.selectByID("C" + userCollection.id);
+			await waitForItemsLoad(win);
+			cv.selection.toggleSelect(cv.getRowIndexByID("C" + groupCollection.id));
+			await win.ZoteroPane.onCollectionSelected();
+			await win.ZoteroPane.itemsView.waitForLoad();
+			tagSelector.onItemViewChanged({
+				collectionTreeRows: win.ZoteroPane.getCollectionTreeRows(),
+				libraryID: win.ZoteroPane.getSelectedLibraryIDs()[0]
+			});
+			await waitForTagSelector(win);
+		}
+		
+		it("should show tags from all selected libraries", async function () {
+			let userTag = 'U ' + Zotero.Utilities.randomString();
+			let groupTag = 'G ' + Zotero.Utilities.randomString();
+			let userCollection = await createDataObject('collection');
+			let groupCollection = await createDataObject('collection', { libraryID: groupLibraryID });
+			let userItem = createUnsavedDataObject('item', { collections: [userCollection.id] });
+			userItem.setTags([userTag]);
+			let groupItem = createUnsavedDataObject(
+				'item', { libraryID: groupLibraryID, collections: [groupCollection.id] }
+			);
+			groupItem.setTags([groupTag]);
+			await Zotero.DB.executeTransaction(async function () {
+				await userItem.save();
+				await groupItem.save();
+			});
+			
+			await selectCrossLibrary(userCollection, groupCollection);
+
+			assert.isTrue(tagSelector.multiLibrary);
+			let tags = getRegularTags();
+			assert.includeMembers(tags, [userTag, groupTag]);
+		});
+		
+		it("shouldn't show colored tags in the selector across libraries", async function () {
+			let coloredTag = 'C ' + Zotero.Utilities.randomString();
+			let userCollection = await createDataObject('collection');
+			let groupCollection = await createDataObject('collection', { libraryID: groupLibraryID });
+			// Color the tag in the user library and apply it to an item there
+			await Zotero.Tags.setColor(libraryID, coloredTag, '#990000', 0);
+			let userItem = createUnsavedDataObject('item', { collections: [userCollection.id] });
+			userItem.setTags([coloredTag]);
+			let groupItem = createUnsavedDataObject(
+				'item', { libraryID: groupLibraryID, collections: [groupCollection.id] }
+			);
+			groupItem.setTags(['G ' + Zotero.Utilities.randomString()]);
+			await Zotero.DB.executeTransaction(async function () {
+				await userItem.save();
+				await groupItem.save();
+			});
+			
+			await selectCrossLibrary(userCollection, groupCollection);
+			
+			// The tag is still listed, just not as a colored tag
+			assert.include(getRegularTags(), coloredTag);
+			assert.notInclude(getColoredTags(), coloredTag);
+			
+			await Zotero.Tags.setColor(libraryID, coloredTag, false);
+		});
+		
+		it("should disable rename, color, and split but allow delete", async function () {
+			let userCollection = await createDataObject('collection');
+			let groupCollection = await createDataObject('collection', { libraryID: groupLibraryID });
+			await selectCrossLibrary(userCollection, groupCollection);
+			
+			let menu = doc.getElementById('tag-menu');
+			let mockEvent = { preventDefault() {}, screenX: 0, screenY: 0 };
+			try {
+				tagSelector.handleTagContext({ name: 'whatever' }, mockEvent);
+				assert.isTrue(doc.getElementById('assign-color-tag').disabled);
+				assert.isTrue(doc.getElementById('rename-tag').disabled);
+				assert.isTrue(doc.getElementById('split-tag').disabled);
+				assert.isFalse(doc.getElementById('delete-tag').disabled);
+			}
+			finally {
+				menu.hidePopup();
+			}
+		});
+		
+		it("should delete a tag from all selected libraries", async function () {
+			let sharedTag = 'shared ' + Zotero.Utilities.randomString();
+			let userCollection = await createDataObject('collection');
+			let groupCollection = await createDataObject('collection', { libraryID: groupLibraryID });
+			let userItem = createUnsavedDataObject('item', { collections: [userCollection.id] });
+			userItem.setTags([sharedTag]);
+			let groupItem = createUnsavedDataObject(
+				'item', { libraryID: groupLibraryID, collections: [groupCollection.id] }
+			);
+			groupItem.setTags([sharedTag]);
+			await Zotero.DB.executeTransaction(async function () {
+				await userItem.save();
+				await groupItem.save();
+			});
+			
+			await selectCrossLibrary(userCollection, groupCollection);
+			
+			tagSelector.contextTag = { name: sharedTag };
+			let dialogPromise = waitForDialog();
+			await tagSelector.openDeletePrompt();
+			await dialogPromise;
+			
+			assert.isFalse(userItem.hasTag(sharedTag), "Tag removed from user library item");
+			assert.isFalse(groupItem.hasTag(sharedTag), "Tag removed from group library item");
+		});
+	});
+	
 	describe("Search error handling", function () {
 		it("should degrade gracefully when getTags() throws SearchError", async function () {
 			// _safeGetTags wraps collectionTreeRow.getTags(), which calls getSearchResults().
 			// If the underlying search query fails, getSearchResults() throws SearchError.
 			// The tag selector should catch this and return [] rather than throwing upwards and breaking the UI.
-			var collectionTreeRow = win.ZoteroPane.getCollectionTreeRow();
+			var collectionTreeRow = win.ZoteroPane.getCollectionTreeRows()[0];
 			collectionTreeRow.clearCache();
 			var stub = sinon.stub(collectionTreeRow, 'getSearchObject').resolves({
 				search: () => { throw new Error('simulated search failure'); }

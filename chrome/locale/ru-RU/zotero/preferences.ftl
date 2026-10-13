@@ -21,6 +21,14 @@ preferences-reader-auto-disable-tool =
 preferences-reader-ebook-font = Шрифт эл. книги:
 preferences-reader-ebook-hyphenate =
     .label = Включить авто-расстановку переносов
+preferences-read-aloud-title = Читать вслух
+preferences-read-aloud-highlight-granularity = Цветовыделить текущий
+preferences-read-aloud-highlight-granularity-paragraph =
+    .label = параграф
+preferences-read-aloud-highlight-granularity-sentence =
+    .label = предложение
+preferences-read-aloud-highlight-granularity-word =
+    .label = слово
 preferences-note-title = Заметки
 preferences-note-open-in-new-window =
     .label = Открывать заметки в новых окнах вместо вкладок
@@ -54,7 +62,7 @@ preferences-styleManager-add-from-file =
     .label = Добавить из файла…
 preferences-styleManager-remove = Нажмите { delete-or-backspace }, чтобы удалить этот стиль.
 preferences-citation-dialog = Диалог цитирования
-preferences-citation-dialog-mode = Режим диалога цитирования:
+preferences-citation-dialog-mode = Диалоговый Режим цитирования:
 preferences-citation-dialog-mode-last-used =
     .label = Последнее использованное
 preferences-citation-dialog-mode-list =
@@ -64,12 +72,16 @@ preferences-citation-dialog-mode-library =
 preferences-advanced-enable-local-api =
     .label = Разрешить другим приложениям на этом компьютере взаимодействовать с { -app-name }
 preferences-advanced-local-api-available = Доступно в <code data-l10n-name="url">{ $url }</span>
+preferences-advanced-local-api-clear-authorizations =
+    .label = Очистить разрешения на запись
 preferences-advanced-server-disabled = { -app-name } HTTP сервер отключен.
 preferences-advanced-server-enable-and-restart =
     .label = Включить и Перезапустить
 preferences-advanced-language-and-region-title = Язык и Регион
 preferences-advanced-enable-bidi-ui =
     .label = Включить утилиты редактирования двунаправленного текста
+preferences-advanced-data-dir =
+    .value = Каталог данных:
 preferences-advanced-reset-data-dir =
     .label = Вернуться к умолчальному расположению…
 preferences-advanced-custom-data-dir =
@@ -77,18 +89,18 @@ preferences-advanced-custom-data-dir =
 preferences-advanced-default-data-dir =
     .value = (Default: { $directory })
     .aria-label = Умолчальное расположение
-preferences-pane-account = Account
+preferences-pane-account = Аккаунт
 -preferences-sync-data-syncing = Синхронизация данных
 preferences-sync-data-syncing-groupbox =
     .aria-label = { -preferences-sync-data-syncing }
 preferences-sync-data-syncing-heading = { -preferences-sync-data-syncing }
 preferences-sync-data-syncing-description = Войдите в аккаунт { -app-name }, чтобы синхронизировать данные между устройствами, сотрудничать с другими и многого другого.
-preferences-sync-settings-heading = Sync
-preferences-sync-settings-intro = { -app-name } can sync your library data and files across devices. <label data-l10n-name="sync-link">Learn more</label>
-preferences-sync-reset-heading = Sync Reset
+preferences-sync-settings-heading = Синхронизировать
+preferences-sync-settings-intro = { -app-name } может синхронизировать данные и файлы вашей библиотеки между устройствами. <label data-l10n-name="sync-link">Узнать больше</label>
+preferences-sync-reset-heading = Сброс синхронизации
 preferences-sync-fileSyncing-groups =
-    .label = Sync attachment files in group libraries using { -app-name } Storage
-preferences-sync-fileSyncing-tos = By using { -app-name } Storage, you agree to become bound by its <label data-l10n-name="terms-link">terms and conditions</label>.
+    .label = Синхронизировать файлы вложений в групповых библиотеках с помощью { -app-name } хранилища
+preferences-sync-fileSyncing-tos = Используя { -app-name } хранилище, вы соглашаетесь соблюдать его <label data-l10n-name="terms-link">условия и положения</label>.
 preferences-account-log-out =
     .label = Выйти...
 preferences-sync-reset-restore-to-server-body = { -app-name } будет заменено “{ $libraryName }” в { $domain } данными с этого компьютера.
@@ -105,7 +117,7 @@ preferences-sync-reset-restore-to-server-remaining-items-text =
     }
 preferences-sync-reset-restore-to-server-checkbox-label =
     { $remoteItemsDeletedCount ->
-        [one] Удалить { $remoteItemsDeletedCount } запись
+        [one] Удалить 1 запись
         [few] Удалить { $remoteItemsDeletedCount } записи
         [many] Удалить { $remoteItemsDeletedCount } записей
        *[other] Удалить { $remoteItemsDeletedCount } записей
@@ -127,3 +139,9 @@ preferences-account-switch-accounts =
 preferences-account-switch-text = Переход на другой аккаунт удалит все данные { -app-name } на этом компьютере. Перед тем как продолжить, убедитесь, что все данные и файлы, которые вы хотите сохранить, синхронизированы с аккаунтом "{ $username }" или у вас есть резервная копия каталога данных { -app-name }.
 preferences-account-switch-confirmation-text = Удаление локальных данных
 preferences-account-switch-accept = Удалите данные и перезапустите
+fulltext-index-status-indexing = Индексирование { $indexed } из { $total }…
+fulltext-index-status-complete = Индекс поиска обновлён
+fulltext-stats-attachments-indexed = Проиндексированных вложений:
+fulltext-stats-partially-indexed = Частично проиндексированных:
+fulltext-stats-not-available = Полнотекстовое содержимое или файл недоступен:
+fulltext-stats-notes-indexed = Заметок проиндексировано:

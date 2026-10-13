@@ -21,6 +21,14 @@ preferences-reader-auto-disable-tool =
 preferences-reader-ebook-font = Skrifttype for e-bok:
 preferences-reader-ebook-hyphenate =
     .label = Aktiver automatisk orddeling
+preferences-read-aloud-title = Les høyt
+preferences-read-aloud-highlight-granularity = Uthev gjeldende
+preferences-read-aloud-highlight-granularity-paragraph =
+    .label = avsnitt
+preferences-read-aloud-highlight-granularity-sentence =
+    .label = setning
+preferences-read-aloud-highlight-granularity-word =
+    .label = ord
 preferences-note-title = Notater
 preferences-note-open-in-new-window =
     .label = Åpne notater i nytt vindu i stedet for faner
@@ -64,12 +72,16 @@ preferences-citation-dialog-mode-library =
 preferences-advanced-enable-local-api =
     .label = Tillat andre programmer på denne datamaskinen å kommunisere med { -app-name }
 preferences-advanced-local-api-available = Tilgjengelig på <code data-l10n-name="url">{ $url }</span>
+preferences-advanced-local-api-clear-authorizations =
+    .label = Fjern skriveautorisasjoner
 preferences-advanced-server-disabled = { -app-name } HTTP-serveren er deaktivert.
 preferences-advanced-server-enable-and-restart =
     .label = Aktiver og start på nytt
 preferences-advanced-language-and-region-title = Språk og region
 preferences-advanced-enable-bidi-ui =
     .label = Aktiver verktøy for toveis tekstredigering
+preferences-advanced-data-dir =
+    .value = Datamappe:
 preferences-advanced-reset-data-dir =
     .label = Gå tilbake til standard plassering…
 preferences-advanced-custom-data-dir =
@@ -77,21 +89,21 @@ preferences-advanced-custom-data-dir =
 preferences-advanced-default-data-dir =
     .value = (Standard: { $directory })
     .aria-label = Standard plassering
-preferences-pane-account = Account
+preferences-pane-account = Konto
 -preferences-sync-data-syncing = Datasynkronisering
 preferences-sync-data-syncing-groupbox =
     .aria-label = { -preferences-sync-data-syncing }
 preferences-sync-data-syncing-heading = { -preferences-sync-data-syncing }
 preferences-sync-data-syncing-description = Logg inn med { -app-name }-kontoen din for å synkronisere dataene dine mellom enheter, samarbeide med andre og mer.
-preferences-sync-settings-heading = Sync
-preferences-sync-settings-intro = { -app-name } can sync your library data and files across devices. <label data-l10n-name="sync-link">Learn more</label>
-preferences-sync-reset-heading = Sync Reset
+preferences-sync-settings-heading = Synkronisering
+preferences-sync-settings-intro = { -app-name } kan synkronisere biblioteksdataene og filene dine på tvers av enheter. <label data-l10n-name="sync-link">Lær mer</label>
+preferences-sync-reset-heading = Tilbakestill synkronisering
 preferences-sync-fileSyncing-groups =
-    .label = Sync attachment files in group libraries using { -app-name } Storage
-preferences-sync-fileSyncing-tos = By using { -app-name } Storage, you agree to become bound by its <label data-l10n-name="terms-link">terms and conditions</label>.
+    .label = Synkroniser vedleggsfiler i gruppebiblioteker ved hjelp av { -app-name }-lagring
+preferences-sync-fileSyncing-tos = Ved å bruke { -app-name }-lagring samtykker du i å være bundet av <label data-l10n-name="terms-link">vilkårene og betingelsene</label>.
 preferences-account-log-out =
     .label = Logg ut…
-preferences-sync-reset-restore-to-server-body = { -app-name } vil erstatte “{ $libraryName }” på { $domain } med data fra denne datamaskinen.
+preferences-sync-reset-restore-to-server-body = { -app-name } vil erstatte «{ $libraryName }» på { $domain } med data fra denne datamaskinen.
 preferences-sync-reset-restore-to-server-deleted-items-text =
     { $remoteItemsDeletedCount } { $remoteItemsDeletedCount ->
         [one] element
@@ -122,6 +134,12 @@ preferences-account-email-label =
     .value = E-post:
 preferences-account-switch-accounts =
     .label = Bytt kontoer…
-preferences-account-switch-text = Hvis du bytter til en annen konto, vil alle { -app-name }-data på denne datamaskinen bli slettet. Før du fortsetter, må du forsikre deg om at alle data og filer du ønsker å beholde, er synkronisert med kontoen «{ $username }», eller at du har en sikkerhetskopi av { -app-name }-datakatalogen.
+preferences-account-switch-text = Hvis du bytter til en annen konto, vil alle { -app-name }-data på denne datamaskinen bli slettet. Før du fortsetter, må du forsikre deg om at alle data og filer du ønsker å beholde, er synkronisert med kontoen «{ $username }», eller at du har en sikkerhetskopi av { -app-name }-datamappen.
 preferences-account-switch-confirmation-text = slett lokale data
 preferences-account-switch-accept = Slett data og start på nytt
+fulltext-index-status-indexing = Indekserer { $indexed } av { $total }…
+fulltext-index-status-complete = Søkeinndeks er oppdatert
+fulltext-stats-attachments-indexed = Indekserte vedlegg:
+fulltext-stats-partially-indexed = Delvis indeksert:
+fulltext-stats-not-available = Fulltekstinnhold eller fil er ikke tilgjengelig:
+fulltext-stats-notes-indexed = Indekserte notater:
